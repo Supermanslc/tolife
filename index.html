@@ -8,9 +8,9 @@
 <meta name="theme-color" content="#0d1117">
 <title>ToLife! — Your Health Journey</title>
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icons/icon-180.png">
-<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 /* ===== ToLife! v1.0 Stylesheet ===== */
@@ -1147,8 +1147,7 @@ input[type="range"]::-webkit-slider-thumb {
   <button class="nav-item" onclick="showPage('Weight')"><span class="nav-icon">⚖️</span><span>Weight</span></button>
   <button class="nav-item" onclick="showPage('Insights')"><span class="nav-icon">🧠</span><span>Insights</span></button>
 </nav>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script><script>
 // ===== ToLife! v1.0 — App Logic =====
 // L'Chaim — to health, to strength
 
@@ -1413,20 +1412,18 @@ async function callAI(food) {
   if (CONFIG.workerUrl) {
     try {
       const r = await fetch(CONFIG.workerUrl, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({food}) });
-      if (r.ok) { const d = await r.json(); if (d.items) return d; }
-      else { const errText = await r.text(); console.warn('Worker error ' + r.status + ':', errText); }
+      if (r.ok) {
+        const d = await r.json();
+        if (d.items) return d;
+        console.warn('Worker returned unexpected format:', d);
+      } else {
+        const errText = await r.text();
+        console.warn('Worker error ' + r.status + ':', errText);
+      }
     } catch(e) { console.warn('Worker fetch failed:', e.message); }
   }
-  try {
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model:'claude-sonnet-4-20250514', max_tokens:1000,
-        messages:[{role:'user',content:'Estimate calories for this food/meal. Return ONLY valid JSON, no markdown.\n\nFood: "'+food+'"\n\nReturn: {"items":[{"name":"item","calories":123,"protein":10,"carbs":15,"fat":5}],"total_calories":123,"total_protein":10,"total_carbs":15,"total_fat":5,"note":"portion note"}\n\nRules: standard servings, multiply calories by 1.05 for conservative adjustment, round to nearest 5, ONLY return JSON.'}]
-      })
-    });
-    if (r.ok) { const d = await r.json(); const txt = d.content.map(c=>c.text||'').join(''); return JSON.parse(txt.replace(/```json|```/g,'').trim()); }
-  } catch(e) { console.log('API unavailable'); }
+  // Fallback to local estimation (direct API calls blocked by CORS)
+  console.log('Using local estimation fallback');
   return estimateLocally(food);
 }
 
