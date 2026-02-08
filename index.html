@@ -881,7 +881,7 @@ input[type="range"]::-webkit-slider-thumb {
     </div>
   </div>
   <div class="header-actions">
-    <span class="version-tag">v1.0</span>
+    <span class="version-tag">v2.0</span>
     <button class="data-btn" onclick="showDataModal()">💾</button>
     <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">☀️</button>
   </div>
@@ -918,7 +918,16 @@ input[type="range"]::-webkit-slider-thumb {
   </div>
   <div class="stat-grid">
     <div class="stat-card"><div class="stat-value stat-teal" id="dashConsumed">—</div><div class="stat-label">Cal Consumed</div></div>
-    <div class="stat-card"><div class="stat-value" style="font-size:0.9rem;color:var(--text-muted)">🥂</div><div class="stat-label">L'Chaim</div></div>
+    <div class="stat-card"><div class="stat-value stat-orange" id="dashBurned">—</div><div class="stat-label">Cal Burned</div></div>
+  </div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="font-size:0.78rem;font-weight:600;color:var(--text-secondary)">⛽ Daily Fuel Gauge</span>
+      <span class="stat-value stat-green" id="dashRemaining" style="font-size:1.1rem">—</span>
+    </div>
+    <div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:6px">Budget + Burned − Consumed = Remaining</div>
+    <div class="calorie-bar-container"><div class="calorie-bar" id="dashBalanceBar" style="width:0%"></div></div>
+    <div style="font-size:0.7rem;color:var(--text-muted);margin-top:4px;text-align:right" id="dashBalanceLabel">— remaining</div>
   </div>
   <div class="card">
     <div class="card-title">📅 This Week</div>
@@ -1045,7 +1054,7 @@ input[type="range"]::-webkit-slider-thumb {
     </div>
     <div class="form-group" id="durationSection" style="display:none">
       <label class="form-label">⏱ Duration (minutes)</label>
-      <input type="number" class="form-input" id="workoutDuration" placeholder="30">
+      <input type="number" class="form-input" id="workoutDuration" placeholder="30" oninput="updateBurnEstimate()">
     </div>
     <div class="form-group" id="cardioFocusSection" style="display:none">
       <label class="form-label">🎯 Cardio Focus</label>
@@ -1057,6 +1066,11 @@ input[type="range"]::-webkit-slider-thumb {
     <div class="form-group" id="hrSection">
       <label class="form-label">❤️ Heart Rate (optional)</label>
       <input type="number" class="form-input" id="workoutHR" placeholder="e.g., 135">
+    </div>
+    <div class="form-group" id="burnSection">
+      <div style="font-size:0.78rem;color:var(--accent-orange);font-style:italic;margin-bottom:6px" id="burnEstimate"></div>
+      <label class="form-label">🔥 Calories Burned (optional — leave blank to use AI estimate)</label>
+      <input type="number" class="form-input" id="workoutCalsBurned" placeholder="e.g., 320 from bike display" oninput="updateBurnEstimate()">
     </div>
     <div class="form-group">
       <label class="form-label">📝 Notes (optional)</label>
@@ -1148,7 +1162,7 @@ input[type="range"]::-webkit-slider-thumb {
   <button class="nav-item" onclick="showPage('Insights')"><span class="nav-icon">🧠</span><span>Insights</span></button>
 </nav>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script><script>
-// ===== ToLife! v1.0 — App Logic =====
+// ===== ToLife! v2.0 — App Logic =====
 // L'Chaim — to health, to strength
 
 const CONFIG = {
@@ -1175,12 +1189,46 @@ function today() { return new Date().toISOString().split('T')[0]; }
 function formatDate(d) { return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
 function daysBetween(a, b) { return Math.floor((new Date(b) - new Date(a)) / 86400000); }
 function generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 5); }
-function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); }
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  if (window._toastTimer) clearTimeout(window._toastTimer);
+  t.classList.remove('show');
+  // Small delay to reset animation if re-triggered quickly
+  setTimeout(() => {
+    t.textContent = msg;
+    t.classList.add('show');
+    window._toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+  }, 50);
+}
 
 function calcBMR(w) { const kg = w * 0.453592, cm = CONFIG.height * 2.54; return Math.round(10 * kg + 6.25 * cm - 5 * CONFIG.age + 5); }
 function calcTDEE(w, level) { const m = { rest: 1.2, light: 1.35, moderate: 1.45, intense: 1.55 }; return Math.round(calcBMR(w) * (m[level] || 1.45) * CONFIG.expendAdjust); }
 function calcTarget(w, level) { return Math.round(calcTDEE(w, level) - CONFIG.deficitPerDay); }
 function getCurrentWeight() { if (!data.weights.length) return CONFIG.startWeight; return [...data.weights].sort((a, b) => b.date.localeCompare(a.date))[0].weight; }
+
+// ===== CALORIES BURNED ESTIMATION =====
+function estimateBurn(type, duration, rpe, weight) {
+  // MET-based estimation with RPE adjustment
+  // MET values: rest=1, stretch/yoga=2.5, weights=3-6 (by RPE), cardio=5-10 (by RPE)
+  const kg = weight * 0.453592;
+  let met;
+  if (type === 'rest') return 0;
+  if (type === 'stretch') met = 2.5;
+  else if (type === 'weights') met = 2.5 + (rpe / 10) * 4; // 2.5-6.5
+  else if (type === 'cardio') met = 4 + (rpe / 10) * 7; // 4-11
+  else met = 3;
+
+  // If no duration specified, estimate: weights=45min, cardio=30min, stretch=20min
+  const mins = duration || (type === 'weights' ? 45 : type === 'cardio' ? 30 : 20);
+  const cals = Math.round((met * kg * mins) / 60);
+  // Apply conservative -5% adjustment (we tend to overestimate burn)
+  return Math.round(cals * CONFIG.expendAdjust);
+}
+
+function getTodayBurned() {
+  return data.workouts.filter(w => w.date === today())
+    .reduce((sum, w) => sum + (w.calsBurned || 0), 0);
+}
 
 function updateMetabolicDisplay() {
   const w = getCurrentWeight();
@@ -1228,11 +1276,12 @@ function updateSlider(type) {
   const map = {
     stress: { id: 'stressSlider', valId: 'stressVal', colors: ['var(--accent-green)','var(--accent-green)','var(--accent-green)','var(--accent-orange)','var(--accent-orange)','var(--accent-orange)','var(--accent-orange)','var(--accent-red)','var(--accent-red)','var(--accent-red)'] },
     energy: { id: 'energySlider', valId: 'energyVal', colors: null },
-    rpe: { id: 'rpeSlider', valId: 'rpeVal', colors: ['var(--accent-teal)','var(--accent-teal)','var(--accent-green)','var(--accent-green)','var(--accent-blue)','var(--accent-blue)','var(--accent-orange)','var(--accent-orange)','var(--accent-red)','var(--accent-red)'] }
+    rpe: { id: 'rpeSlider', valId: 'rpeVal', colors: ['var(--accent-teal)','var(--accent-teal)','var(--accent-green)','var(--accent-green)','var(--accent-blue)','var(--accent-blue)','var(--accent-orange)','var(--accent-orange)','var(--accent-red)','var(--accent-red)'], onUpdate: updateBurnEstimate }
   };
   const s = map[type]; const v = document.getElementById(s.id).value;
   const el = document.getElementById(s.valId); el.textContent = v;
   if (s.colors) el.style.color = s.colors[v - 1];
+  if (s.onUpdate) s.onUpdate();
 }
 
 function setSleep(val) {
@@ -1280,6 +1329,17 @@ function setWorkoutType(type) {
   document.getElementById('cardioFocusSection').style.display = type === 'cardio' ? 'block' : 'none';
   document.getElementById('rpeSection').style.display = type === 'rest' ? 'none' : 'block';
   document.getElementById('hrSection').style.display = type === 'rest' ? 'none' : 'block';
+  document.getElementById('burnSection').style.display = type === 'rest' ? 'none' : 'block';
+  updateBurnEstimate();
+}
+
+function updateBurnEstimate() {
+  if (!currentWorkoutType || currentWorkoutType === 'rest') { document.getElementById('burnEstimate').textContent = ''; return; }
+  const rpe = parseInt(document.getElementById('rpeSlider').value) || 5;
+  const duration = parseInt(document.getElementById('workoutDuration').value) || 0;
+  const w = getCurrentWeight();
+  const est = estimateBurn(currentWorkoutType, duration, rpe, w);
+  document.getElementById('burnEstimate').textContent = 'AI estimate: ~' + est + ' cal (override below if your machine shows different)';
 }
 
 function setCardioFocus(focus) {
@@ -1290,18 +1350,24 @@ function setCardioFocus(focus) {
 
 function saveWorkout() {
   if (!currentWorkoutType) { showToast('⚠️ Select a workout type'); return; }
+  const rpe = currentWorkoutType !== 'rest' ? parseInt(document.getElementById('rpeSlider').value) : 0;
+  const duration = parseInt(document.getElementById('workoutDuration').value) || 0;
+  const manualBurn = parseInt(document.getElementById('workoutCalsBurned').value) || 0;
+  const w = getCurrentWeight();
+  const calsBurned = manualBurn > 0 ? manualBurn : estimateBurn(currentWorkoutType, duration, rpe, w);
+
   data.workouts.push({
-    date: today(), type: currentWorkoutType,
-    rpe: currentWorkoutType !== 'rest' ? parseInt(document.getElementById('rpeSlider').value) : 0,
-    duration: parseInt(document.getElementById('workoutDuration').value) || 0,
+    date: today(), type: currentWorkoutType, rpe, duration,
     focus: currentCardioFocus, hr: parseInt(document.getElementById('workoutHR').value) || 0,
-    note: document.getElementById('workoutNote').value.trim()
+    note: document.getElementById('workoutNote').value.trim(),
+    calsBurned
   });
   saveData();
   document.getElementById('workoutDuration').value = '';
   document.getElementById('workoutHR').value = '';
   document.getElementById('workoutNote').value = '';
-  showToast('💪 Workout logged!'); renderWorkoutHistory(); refreshDashboard();
+  document.getElementById('workoutCalsBurned').value = '';
+  showToast('💪 Workout logged! ' + calsBurned + ' cal burned'); renderWorkoutHistory(); refreshDashboard();
 }
 
 function renderWorkoutHistory() {
@@ -1312,6 +1378,7 @@ function renderWorkoutHistory() {
   const labels = { weights:'🏋️ Weights', cardio:'🚴 Cardio', stretch:'🧘 Stretch', rest:'🛋 Rest' };
   c.innerHTML = recent.map((w, i) => {
     const ex = []; if (w.duration) ex.push(w.duration+'min'); if (w.hr) ex.push('❤️'+w.hr); if (w.focus) ex.push(w.focus==='fatburn'?'🔥 fat burn':'💓 intensity');
+    if (w.calsBurned) ex.push('🔥'+w.calsBurned+' cal');
     return '<div class="log-entry"><span class="log-date">'+formatDate(w.date)+'</span><div class="log-detail"><span class="log-badge '+badges[w.type]+'">'+labels[w.type]+'</span><span style="font-size:0.8rem;color:var(--text-secondary)">'+(ex.length?' · '+ex.join(' · '):'')+'</span>'+(w.note?'<div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px">'+w.note+'</div>':'')+'</div>'+(w.type!=='rest'?'<span class="log-rpe" style="color:var(--accent-purple)">RPE '+w.rpe+'</span>':'')+'<button class="delete-btn" onclick="deleteWorkout('+i+')" title="Delete">×</button></div>';
   }).join('');
 }
@@ -1647,8 +1714,10 @@ function updateCalorieSummary() {
   const pct = Math.min((consumed/target)*100, 120);
   const bar = document.getElementById('calorieBar');
   bar.style.width = Math.min(pct,100)+'%'; bar.classList.toggle('over', consumed > target);
-  const rem = target - consumed;
-  document.getElementById('calRemaining').textContent = rem > 0 ? rem.toLocaleString()+' cal remaining' : Math.abs(rem).toLocaleString()+' cal over';
+  const burned = getTodayBurned();
+  const effectiveBudget = target + burned;
+  const rem = effectiveBudget - consumed;
+  document.getElementById('calRemaining').textContent = rem > 0 ? rem.toLocaleString()+' cal remaining' + (burned ? ' (incl. '+burned+' burned)' : '') : Math.abs(rem).toLocaleString()+' cal over';
   document.getElementById('calConsumed').textContent = consumed.toLocaleString();
   const tP = e.log?e.log.reduce((s,f)=>s+(f.protein||0),0):0;
   const tCa = e.log?e.log.reduce((s,f)=>s+(f.carbs||0),0):0;
@@ -1673,6 +1742,22 @@ function refreshDashboard() {
   document.getElementById('dashWorkout').textContent = todayW.length ? (todayW[todayW.length-1].type==='rest'?'Rest':todayW[todayW.length-1].rpe+'/10') : '—';
   const consumed = todayCal&&todayCal.log ? todayCal.log.reduce((s,f)=>s+f.calories,0) : 0;
   document.getElementById('dashConsumed').textContent = consumed ? consumed.toLocaleString() : '—';
+  const burned = getTodayBurned();
+  document.getElementById('dashBurned').textContent = burned ? burned.toLocaleString() : '—';
+  const budget = todayCal ? todayCal.target : calcTarget(w, 'moderate');
+  const remaining = budget + burned - consumed;
+  document.getElementById('dashRemaining').textContent = remaining.toLocaleString();
+  document.getElementById('dashRemaining').className = 'stat-value ' + (remaining >= 0 ? 'stat-green' : 'stat-red');
+  // Balance bar
+  const totalBudget = budget + burned;
+  const balPct = totalBudget > 0 ? Math.min((consumed / totalBudget) * 100, 110) : 0;
+  const balBar = document.getElementById('dashBalanceBar');
+  const balLabel = document.getElementById('dashBalanceLabel');
+  if (balBar) {
+    balBar.style.width = Math.min(balPct, 100) + '%';
+    balBar.classList.toggle('over', consumed > totalBudget);
+    balLabel.textContent = consumed > totalBudget ? (consumed - totalBudget).toLocaleString() + ' cal over budget' : remaining.toLocaleString() + ' cal remaining';
+  }
   renderWeekGrid(); renderNudge(todayCheckin); renderWeightChart(); renderDashboardInsights();
 }
 
@@ -1769,9 +1854,9 @@ function calcBestStreak() { const ad=[...new Set([...data.workouts.map(w=>w.date
 // ===== DATA MANAGEMENT =====
 function showDataModal() { document.getElementById('dataModal').classList.add('active'); }
 function closeDataModal() { document.getElementById('dataModal').classList.remove('active'); }
-function exportData() { const b=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='tolife-backup-'+today()+'.json'; a.click(); URL.revokeObjectURL(a.href); showToast('📤 Exported!'); closeDataModal(); }
-function importData(ev) { const f=ev.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=e=>{try{const im=JSON.parse(e.target.result); if(im.weights&&im.workouts){data={myFoods:[],...im};saveData();showToast('📥 Imported!');refreshDashboard();closeDataModal();}}catch{showToast('⚠️ Error');}}; r.readAsText(f); ev.target.value=''; }
-function resetAllData() { if(confirm('⚠️ Delete ALL data?')&&confirm('Really? Cannot be undone.')){ data={weights:[],workouts:[],checkins:[],calories:[],myFoods:[],startDate:today()}; saveData(); showToast('🗑 Reset'); closeDataModal(); refreshDashboard(); } }
+function exportData() { const b=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='tolife-backup-'+today()+'.json'; a.click(); URL.revokeObjectURL(a.href); closeDataModal(); showToast('📤 Exported!'); }
+function importData(ev) { const f=ev.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=e=>{try{const im=JSON.parse(e.target.result); if(im.weights&&im.workouts){data={myFoods:[],...im};saveData();closeDataModal(); showToast('📥 Imported!'); refreshDashboard();}}catch{showToast('⚠️ Error');}}; r.readAsText(f); ev.target.value=''; }
+function resetAllData() { if(confirm('⚠️ Delete ALL data?')&&confirm('Really? Cannot be undone.')){ data={weights:[],workouts:[],checkins:[],calories:[],myFoods:[],startDate:today()}; saveData(); closeDataModal(); showToast('🗑 Reset'); refreshDashboard(); } }
 
 // ===== INIT =====
 function init() {
