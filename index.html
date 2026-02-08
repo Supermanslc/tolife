@@ -844,11 +844,18 @@ input[type="range"]::-webkit-slider-thumb {
   font-weight: 600;
   font-size: 0.85rem;
   z-index: 300;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s ease, opacity 0.3s ease;
   white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  display: none;
 }
 
-.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  display: block;
+}
 
 /* ===== SPINNER ===== */
 .spinner {
@@ -1191,13 +1198,18 @@ function daysBetween(a, b) { return Math.floor((new Date(b) - new Date(a)) / 864
 function generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 5); }
 function showToast(msg) {
   const t = document.getElementById('toast');
-  if (window._toastTimer) clearTimeout(window._toastTimer);
+  if (window._toastTimer) { clearTimeout(window._toastTimer); window._toastTimer = null; }
+  if (window._toastDelay) { clearTimeout(window._toastDelay); window._toastDelay = null; }
   t.classList.remove('show');
-  // Small delay to reset animation if re-triggered quickly
-  setTimeout(() => {
+  t.style.display = 'none';
+  window._toastDelay = setTimeout(() => {
     t.textContent = msg;
+    t.style.display = '';
     t.classList.add('show');
-    window._toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+    window._toastTimer = setTimeout(() => {
+      t.classList.remove('show');
+      setTimeout(() => { t.style.display = 'none'; }, 300);
+    }, 2500);
   }, 50);
 }
 
