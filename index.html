@@ -1450,15 +1450,16 @@ function renderMyWorkouts() {
     if (w.rpe) details.push('RPE ' + w.rpe);
     if (w.calsBurned) details.push('~' + w.calsBurned + ' cal');
     if (w.focus) details.push(w.focus === 'fatburn' ? '🔥 fat burn' : '💓 intensity');
+    var wid = w.id;
     return '<div class="my-food-item" style="cursor:default">' +
       '<div class="my-food-info" style="flex:1">' +
         '<div class="my-food-name">' + (icons[w.type]||'') + ' ' + w.name + '</div>' +
         '<div class="my-food-cal">' + details.join(' · ') + (w.count ? ' · used ' + w.count + '×' : '') + '</div>' +
       '</div>' +
       '<div style="display:flex;gap:6px;align-items:center">' +
-        '<button class="btn-primary" onclick="quickLogMyWorkout('' + w.id + '')" style="font-size:0.7rem;padding:6px 10px;margin:0;white-space:nowrap">⚡ Log</button>' +
-        '<button class="btn-secondary" onclick="prefillMyWorkout('' + w.id + '')" style="font-size:0.7rem;padding:6px 10px;margin:0;white-space:nowrap">✏️ Edit</button>' +
-        '<button class="my-food-remove" onclick="removeMyWorkout('' + w.id + '')" title="Remove">×</button>' +
+        '<button class="btn-primary" onclick="quickLogMyWorkout(\x27' + wid + '\x27)" style="font-size:0.7rem;padding:6px 10px;margin:0;white-space:nowrap">⚡ Log</button>' +
+        '<button class="btn-secondary" onclick="prefillMyWorkout(\x27' + wid + '\x27)" style="font-size:0.7rem;padding:6px 10px;margin:0;white-space:nowrap">✏️ Edit</button>' +
+        '<button class="my-food-remove" onclick="removeMyWorkout(\x27' + wid + '\x27)" title="Remove">×</button>' +
       '</div></div>';
   }).join('');
 }
