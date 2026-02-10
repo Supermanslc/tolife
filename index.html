@@ -888,7 +888,7 @@ input[type="range"]::-webkit-slider-thumb {
     </div>
   </div>
   <div class="header-actions">
-    <span class="version-tag">v2.0</span>
+    <span class="version-tag">v2.1</span>
     <button class="data-btn" onclick="showDataModal()">💾</button>
     <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">☀️</button>
   </div>
@@ -1083,8 +1083,16 @@ input[type="range"]::-webkit-slider-thumb {
       <label class="form-label">📝 Notes (optional)</label>
       <textarea class="form-textarea" id="workoutNote" placeholder="e.g., chest & shoulders, HIIT intervals..." rows="2"></textarea>
     </div>
-    <button class="btn-primary" onclick="saveWorkout()">Log Workout</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn-primary" onclick="saveWorkout()" style="flex:1">Log Workout</button>
+      <button class="btn-secondary" onclick="saveToMyWorkouts()" style="flex:0;white-space:nowrap;font-size:0.8rem">⭐ Save</button>
+    </div>
   </div>
+  <div class="card">
+    <div class="card-title">⭐ My Workouts — Quick Log or Edit & Log</div>
+    <div id="myWorkoutsList"></div>
+  </div>
+
   <div class="card">
     <div class="card-title">📋 Recent Workouts</div>
     <div id="workoutHistory"></div>
@@ -1169,7 +1177,7 @@ input[type="range"]::-webkit-slider-thumb {
   <button class="nav-item" onclick="showPage('Insights')"><span class="nav-icon">🧠</span><span>Insights</span></button>
 </nav>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script><script>
-// ===== ToLife! v2.0 — App Logic =====
+// ===== ToLife! v2.1 — App Logic =====
 // L'Chaim — to health, to strength
 
 const CONFIG = {
@@ -1180,14 +1188,14 @@ const CONFIG = {
 };
 
 let data = {
-  weights: [], workouts: [], checkins: [], calories: [], myFoods: [], startDate: null
+  weights: [], workouts: [], checkins: [], calories: [], myFoods: [], myWorkouts: [], startDate: null
 };
 
 const STORAGE_KEY = 'tolife_data';
 
 function loadData() {
   const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved) { const p = JSON.parse(saved); data = { ...data, ...p }; if (!data.myFoods) data.myFoods = []; }
+  if (saved) { const p = JSON.parse(saved); data = { ...data, ...p }; if (!data.myFoods) data.myFoods = []; if (!data.myWorkouts) data.myWorkouts = []; }
   if (!data.startDate) { data.startDate = today(); saveData(); }
 }
 
@@ -1277,7 +1285,7 @@ function showPage(name) {
   if (name === 'Dashboard') refreshDashboard();
   if (name === 'Insights') refreshInsights();
   if (name === 'Weight') { updateMetabolicDisplay(); renderWeightHistory(); renderWeightStats(); }
-  if (name === 'Workout') renderWorkoutHistory();
+  if (name === 'Workout') { renderWorkoutHistory(); renderMyWorkouts(); }
   if (name === 'Nutrition') { renderMyFoods(); renderFoodLog(); updateCalorieSummary(); }
 }
 
@@ -1386,7 +1394,7 @@ function saveWorkout() {
   document.getElementById('workoutHR').value = '';
   document.getElementById('workoutNote').value = '';
   document.getElementById('workoutCalsBurned').value = '';
-  showToast('💪 Workout logged! ' + calsBurned + ' cal burned'); renderWorkoutHistory(); refreshDashboard();
+  showToast('💪 Workout logged! ' + calsBurned + ' cal burned'); renderWorkoutHistory(); renderMyWorkouts(); refreshDashboard();
 }
 
 function renderWorkoutHistory() {
@@ -1407,6 +1415,109 @@ function deleteWorkout(di) {
   const t = sorted[di]; const idx = data.workouts.findIndex(w => w.date===t.date && w.type===t.type && w.rpe===t.rpe && w.note===t.note);
   if (idx > -1) { data.workouts.splice(idx, 1); saveData(); renderWorkoutHistory(); refreshDashboard(); showToast('🗑 Deleted'); }
 }
+
+// ===== MY WORKOUTS RECALL =====
+function saveToMyWorkouts() {
+  // Save the most recent workout as a template
+  const recent = [...data.workouts].sort((a, b) => b.date.localeCompare(a.date))[0];
+  if (!recent) { showToast('⚠️ Log a workout first'); return; }
+  const name = recent.note || (recent.type + (recent.duration ? ' ' + recent.duration + 'min' : ''));
+  if (!name || name === recent.type) { showToast('⚠️ Add a note to name this workout'); return; }
+  // Check for duplicates
+  if (data.myWorkouts.find(w => w.name.toLowerCase() === name.toLowerCase())) {
+    showToast('⚠️ Already saved'); return;
+  }
+  data.myWorkouts.push({
+    id: generateId(), name, type: recent.type, rpe: recent.rpe,
+    duration: recent.duration, focus: recent.focus, hr: recent.hr,
+    calsBurned: recent.calsBurned, count: 0
+  });
+  saveData(); renderMyWorkouts(); showToast('⭐ Saved to My Workouts!');
+}
+
+function renderMyWorkouts() {
+  const c = document.getElementById('myWorkoutsList');
+  if (!c) return;
+  if (!data.myWorkouts || !data.myWorkouts.length) {
+    c.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:0.85rem">No saved workouts yet. Log a workout with a note, then tap "Save to My Workouts".</div>';
+    return;
+  }
+  const icons = {weights:'🏋️', cardio:'🚴', stretch:'🧘', rest:'🛋'};
+  const sorted = [...data.myWorkouts].sort((a, b) => (b.count||0) - (a.count||0));
+  c.innerHTML = sorted.map(w => {
+    const details = [];
+    if (w.duration) details.push(w.duration + 'min');
+    if (w.rpe) details.push('RPE ' + w.rpe);
+    if (w.calsBurned) details.push('~' + w.calsBurned + ' cal');
+    if (w.focus) details.push(w.focus === 'fatburn' ? '🔥 fat burn' : '💓 intensity');
+    return '<div class="my-food-item" style="cursor:default">' +
+      '<div class="my-food-info" style="flex:1">' +
+        '<div class="my-food-name">' + (icons[w.type]||'') + ' ' + w.name + '</div>' +
+        '<div class="my-food-cal">' + details.join(' · ') + (w.count ? ' · used ' + w.count + '×' : '') + '</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:6px;align-items:center">' +
+        '<button class="btn-primary" onclick="quickLogMyWorkout('' + w.id + '')" style="font-size:0.7rem;padding:6px 10px;margin:0;white-space:nowrap">⚡ Log</button>' +
+        '<button class="btn-secondary" onclick="prefillMyWorkout('' + w.id + '')" style="font-size:0.7rem;padding:6px 10px;margin:0;white-space:nowrap">✏️ Edit</button>' +
+        '<button class="my-food-remove" onclick="removeMyWorkout('' + w.id + '')" title="Remove">×</button>' +
+      '</div></div>';
+  }).join('');
+}
+
+function quickLogMyWorkout(id) {
+  const template = data.myWorkouts.find(w => w.id === id);
+  if (!template) return;
+  const w = getCurrentWeight();
+  const calsBurned = template.calsBurned || estimateBurn(template.type, template.duration, template.rpe, w);
+  data.workouts.push({
+    date: today(), type: template.type, rpe: template.rpe,
+    duration: template.duration, focus: template.focus || '', hr: template.hr || 0,
+    note: template.name, calsBurned
+  });
+  template.count = (template.count || 0) + 1;
+  saveData(); renderWorkoutHistory(); renderMyWorkouts(); refreshDashboard();
+  showToast('💪 ' + template.name + ' logged! ' + calsBurned + ' cal');
+}
+
+function prefillMyWorkout(id) {
+  const template = data.myWorkouts.find(w => w.id === id);
+  if (!template) return;
+  // Set workout type
+  currentWorkoutType = template.type;
+  document.querySelectorAll('#workoutTypeSelect .quick-btn').forEach(b => b.classList.remove('active'));
+  const typeLabels = {weights:'🏋️ Weights', cardio:'🚴 Cardio', stretch:'🧘 Stretch', rest:'🛋 Rest Day'};
+  document.querySelectorAll('#workoutTypeSelect .quick-btn').forEach(b => {
+    if (b.textContent.trim() === typeLabels[template.type]) b.classList.add('active');
+  });
+  // Show/hide fields
+  document.getElementById('durationSection').style.display = (template.type === 'cardio' || template.type === 'stretch') ? 'block' : 'none';
+  document.getElementById('cardioFocusSection').style.display = template.type === 'cardio' ? 'block' : 'none';
+  document.getElementById('rpeSection').style.display = template.type === 'rest' ? 'none' : 'block';
+  document.getElementById('hrSection').style.display = template.type === 'rest' ? 'none' : 'block';
+  document.getElementById('burnSection').style.display = template.type === 'rest' ? 'none' : 'block';
+  // Fill values
+  if (template.rpe) { document.getElementById('rpeSlider').value = template.rpe; updateSlider('rpe'); }
+  if (template.duration) document.getElementById('workoutDuration').value = template.duration;
+  if (template.hr) document.getElementById('workoutHR').value = template.hr;
+  document.getElementById('workoutNote').value = template.name;
+  if (template.calsBurned) document.getElementById('workoutCalsBurned').value = template.calsBurned;
+  if (template.focus) {
+    currentCardioFocus = template.focus;
+    document.getElementById('btnFatBurn').classList.toggle('active', template.focus === 'fatburn');
+    document.getElementById('btnIntensity').classList.toggle('active', template.focus === 'intensity');
+  }
+  updateBurnEstimate();
+  // Scroll to the form
+  document.getElementById('workoutTypeSelect').scrollIntoView({behavior: 'smooth', block: 'start'});
+  showToast('✏️ Edit & log when ready');
+}
+
+function removeMyWorkout(id) {
+  if (confirm('Remove from My Workouts?')) {
+    data.myWorkouts = data.myWorkouts.filter(w => w.id !== id);
+    saveData(); renderMyWorkouts(); showToast('🗑 Removed');
+  }
+}
+
 
 // ===== WEIGHT =====
 function saveWeight() {
@@ -1912,8 +2023,8 @@ async function exportData() {
   URL.revokeObjectURL(a.href);
   closeDataModal(); showToast('📤 Exported!');
 }
-function importData(ev) { const f=ev.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=e=>{try{const im=JSON.parse(e.target.result); if(im.weights&&im.workouts){data={myFoods:[],...im};saveData();closeDataModal(); showToast('📥 Imported!'); refreshDashboard();}}catch{showToast('⚠️ Error');}}; r.readAsText(f); ev.target.value=''; }
-function resetAllData() { if(confirm('⚠️ Delete ALL data?')&&confirm('Really? Cannot be undone.')){ data={weights:[],workouts:[],checkins:[],calories:[],myFoods:[],startDate:today()}; saveData(); closeDataModal(); showToast('🗑 Reset'); refreshDashboard(); } }
+function importData(ev) { const f=ev.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=e=>{try{const im=JSON.parse(e.target.result); if(im.weights&&im.workouts){data={myFoods:[],myWorkouts:[],...im};saveData();closeDataModal(); showToast('📥 Imported!'); refreshDashboard();}}catch{showToast('⚠️ Error');}}; r.readAsText(f); ev.target.value=''; }
+function resetAllData() { if(confirm('⚠️ Delete ALL data?')&&confirm('Really? Cannot be undone.')){ data={weights:[],workouts:[],checkins:[],calories:[],myFoods:[],myWorkouts:[],startDate:today()}; saveData(); closeDataModal(); showToast('🗑 Reset'); refreshDashboard(); } }
 
 // ===== INIT =====
 function init() {
