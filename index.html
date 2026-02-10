@@ -1192,7 +1192,7 @@ function loadData() {
 }
 
 function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
-function today() { return new Date().toISOString().split('T')[0]; }
+function today() { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function formatDate(d) { return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
 function daysBetween(a, b) { return Math.floor((new Date(b) - new Date(a)) / 86400000); }
 function generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 5); }
@@ -1323,10 +1323,17 @@ function saveCheckin() {
   const note = document.getElementById('checkinNote').value.trim();
   data.checkins = data.checkins.filter(c => c.date !== today());
   data.checkins.push({ date: today(), stress, sleep: currentSleep, energy, note });
+  // Update calorie entry WITHOUT destroying existing food log
   const w = getCurrentWeight(); const target = calcTarget(w, currentActivity);
-  const todayLog = getTodayFoodLog(); const consumed = todayLog.reduce((s, f) => s + f.calories, 0);
-  data.calories = data.calories.filter(c => c.date !== today());
-  data.calories.push({ date: today(), activity: currentActivity, target, consumed, adherence: currentAdherence, log: todayLog });
+  const existing = data.calories.find(c => c.date === today());
+  if (existing) {
+    existing.activity = currentActivity;
+    existing.target = target;
+    existing.adherence = currentAdherence;
+    existing.consumed = existing.log ? existing.log.reduce((s, f) => s + f.calories, 0) : 0;
+  } else {
+    data.calories.push({ date: today(), activity: currentActivity, target, consumed: 0, adherence: currentAdherence, log: [] });
+  }
   saveData(); showToast('✅ Check-in saved!'); refreshDashboard();
 }
 
@@ -1777,9 +1784,23 @@ function renderWeekGrid() {
   const g = document.getElementById('weekGrid'); const dn = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const now = new Date(); const sow = new Date(now); sow.setDate(now.getDate()-now.getDay());
   let h = '';
-  for (let i=0;i<7;i++) { const d=new Date(sow); d.setDate(d.getDate()+i); const ds=d.toISOString().split('T')[0];
-    const wo = data.workouts.find(w=>w.date===ds); const icons={weights:'🏋️',cardio:'🚴',stretch:'🧘',rest:'🛋'};
-    h += '<div class="week-day '+(wo?'completed':'')+' '+(ds===today()?'today':'')+'"><div class="week-day-label">'+dn[i]+'</div><div class="week-day-icon">'+(wo?icons[wo.type]:(ds===today()?'·':''))+'</div></div>';
+  for (let i=0;i<7;i++) {
+    const d = new Date(sow); d.setDate(d.getDate()+i);
+    // Use local date to avoid UTC timezone shift
+    const ds = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const dayWorkouts = data.workouts.filter(w => w.date === ds);
+    const icons = {weights:'🏋️',cardio:'🚴',stretch:'🧘',rest:'🛋'};
+    // Show icon for most "active" workout if multiple
+    let icon = '';
+    if (dayWorkouts.length) {
+      const priority = ['weights','cardio','stretch','rest'];
+      const best = dayWorkouts.sort((a,b) => priority.indexOf(a.type) - priority.indexOf(b.type))[0];
+      icon = icons[best.type] || '✓';
+      if (dayWorkouts.length > 1) icon += '<span style="font-size:0.5rem;vertical-align:super">+' + (dayWorkouts.length-1) + '</span>';
+    }
+    h += '<div class="week-day '+(dayWorkouts.length?'completed':'')+' '+(ds===today()?'today':'')+'">' +
+         '<div class="week-day-label">'+dn[i]+'</div>' +
+         '<div class="week-day-icon">'+(icon || (ds===today()?'·':''))+'</div></div>';
   }
   g.innerHTML = h;
 }
