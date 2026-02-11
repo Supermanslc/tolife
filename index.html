@@ -111,7 +111,7 @@ body {
 }
 
 .header-brand .lchaim {
-  font-size: 0.7rem;
+  font-size: 0.82rem;
   color: var(--text-muted);
   font-style: italic;
   margin-top: 2px;
@@ -166,7 +166,7 @@ body {
   cursor: pointer;
   transition: all var(--transition);
   color: var(--text-muted);
-  font-size: 0.65rem;
+  font-size: 0.88rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -207,7 +207,7 @@ body {
 .card:hover { border-color: var(--border-focus); }
 
 .card-title {
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -253,13 +253,13 @@ body {
 }
 
 .progress-label {
-  font-size: 0.7rem;
+  font-size: 0.85rem;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 1px;
 }
 
-.goal-subtitle { font-size: 0.85rem; color: var(--text-secondary); }
+.goal-subtitle { font-size: 0.92rem; color: var(--text-secondary); }
 .goal-subtitle strong { color: var(--text-primary); }
 
 /* ===== STAT GRID ===== */
@@ -286,7 +286,7 @@ body {
 }
 
 .stat-label {
-  font-size: 0.7rem;
+  font-size: 0.85rem;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.8px;
@@ -308,7 +308,7 @@ body {
 
 .form-label {
   display: block;
-  font-size: 0.78rem;
+  font-size: 0.92rem;
   font-weight: 600;
   color: var(--text-secondary);
   margin-bottom: 6px;
@@ -458,7 +458,7 @@ input[type="range"]::-webkit-slider-thumb {
 
 .btn-small {
   padding: 6px 12px;
-  font-size: 0.78rem;
+  font-size: 0.88rem;
   border-radius: 16px;
   border: 1px solid var(--border);
   background: var(--bg-input);
@@ -483,9 +483,9 @@ input[type="range"]::-webkit-slider-thumb {
   margin-bottom: 12px;
 }
 
-.calorie-budget .cb-label { font-size: 0.78rem; color: var(--text-secondary); font-weight: 600; }
+.calorie-budget .cb-label { font-size: 0.92rem; color: var(--text-secondary); font-weight: 600; }
 .calorie-budget .cb-value { font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 700; color: var(--accent-blue); }
-.calorie-budget .cb-detail { font-size: 0.7rem; color: var(--text-muted); }
+.calorie-budget .cb-detail { font-size: 0.85rem; color: var(--text-muted); }
 
 .calorie-bar-container {
   height: 8px;
@@ -576,12 +576,12 @@ input[type="range"]::-webkit-slider-thumb {
   display: flex;
   gap: 12px;
   margin-top: 6px;
-  font-size: 0.75rem;
+  font-size: 0.88rem;
   color: var(--text-muted);
 }
 
 .ai-result-note {
-  font-size: 0.7rem;
+  font-size: 0.85rem;
   color: var(--text-muted);
   font-style: italic;
   margin-top: 6px;
@@ -630,7 +630,7 @@ input[type="range"]::-webkit-slider-thumb {
   justify-content: center;
   flex-shrink: 0;
   transition: all var(--transition);
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   color: transparent;
 }
 
@@ -641,8 +641,8 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 .my-food-info { flex: 1; }
-.my-food-name { font-size: 0.85rem; font-weight: 500; }
-.my-food-cal { font-size: 0.75rem; color: var(--text-muted); font-family: 'JetBrains Mono'; }
+.my-food-name { font-size: 0.95rem; font-weight: 500; }
+.my-food-cal { font-size: 0.85rem; color: var(--text-muted); font-family: 'JetBrains Mono'; }
 
 .my-food-remove {
   background: none;
@@ -700,17 +700,17 @@ input[type="range"]::-webkit-slider-thumb {
 
 .log-date {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   color: var(--text-muted);
   min-width: 65px;
 }
 
-.log-detail { flex: 1; margin-left: 10px; font-size: 0.85rem; }
+.log-detail { flex: 1; margin-left: 10px; font-size: 0.92rem; }
 
 .log-badge {
   padding: 3px 10px;
   border-radius: 12px;
-  font-size: 0.7rem;
+  font-size: 0.82rem;
   font-weight: 700;
   text-transform: uppercase;
 }
@@ -820,7 +820,7 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 .week-day-label {
-  font-size: 0.6rem;
+  font-size: 0.78rem;
   font-weight: 700;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -879,6 +879,53 @@ input[type="range"]::-webkit-slider-thumb {
   .week-day { padding: 6px 2px; }
   .ai-food-input { flex-direction: column; }
 }
+
+/* === COMPACT LINEAR PROGRESS BAR === */
+.progress-linear {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 4px 0;
+}
+.progress-linear-info {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 80px;
+}
+.progress-linear-lbs {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--accent-green);
+}
+.progress-linear-unit {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.progress-linear-bar-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.progress-linear-bar-bg {
+  height: 14px;
+  background: var(--card-border);
+  border-radius: 7px;
+  overflow: hidden;
+}
+.progress-linear-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-teal));
+  border-radius: 7px;
+  transition: width 0.5s ease;
+}
+.progress-linear-label {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  text-align: right;
+}
 </style></head><body>
 <header class="header">
   <div class="header-brand">
@@ -888,7 +935,7 @@ input[type="range"]::-webkit-slider-thumb {
     </div>
   </div>
   <div class="header-actions">
-    <span class="version-tag">v2.1</span>
+    <span class="version-tag">v3.1</span>
     <button class="data-btn" onclick="showDataModal()">💾</button>
     <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">☀️</button>
   </div>
@@ -903,18 +950,15 @@ input[type="range"]::-webkit-slider-thumb {
     <div id="nudgeText"></div>
   </div>
   <div class="card">
-    <div class="goal-section">
-      <div class="progress-ring-container">
-        <svg width="150" height="150" class="progress-ring">
-          <circle class="progress-ring-bg" cx="75" cy="75" r="62"/>
-          <circle class="progress-ring-fill" id="progressRing" cx="75" cy="75" r="62" stroke-dasharray="389.56" stroke-dashoffset="389.56"/>
-        </svg>
-        <div class="progress-center">
-          <div class="progress-lbs" id="lbsLost">0.0</div>
-          <div class="progress-label">lbs lost</div>
-        </div>
+    <div class="progress-linear">
+      <div class="progress-linear-info">
+        <span class="progress-linear-lbs" id="lbsLost">0.0</span>
+        <span class="progress-linear-unit">lbs lost</span>
       </div>
-      <div class="goal-subtitle" id="goalSubtitle">Week <strong>1</strong> of 8 — <strong>21.0</strong> lbs to go</div>
+      <div class="progress-linear-bar-wrap">
+        <div class="progress-linear-bar-bg"><div class="progress-linear-bar-fill" id="progressBar" style="width:0%"></div></div>
+        <div class="progress-linear-label" id="goalSubtitle">Week 1 of 8 — 21.0 lbs to go</div>
+      </div>
     </div>
   </div>
   <div class="stat-grid">
@@ -929,21 +973,23 @@ input[type="range"]::-webkit-slider-thumb {
   </div>
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <span style="font-size:0.78rem;font-weight:600;color:var(--text-secondary)">⛽ Daily Fuel Gauge</span>
+      <span style="font-size:0.88rem;font-weight:600;color:var(--text-secondary)">⛽ Daily Fuel Gauge</span>
       <span class="stat-value stat-green" id="dashRemaining" style="font-size:1.1rem">—</span>
     </div>
-    <div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:6px">Budget + Burned − Consumed = Remaining</div>
+    <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:6px">Budget + Burned − Consumed = Remaining</div>
     <div class="calorie-bar-container"><div class="calorie-bar" id="dashBalanceBar" style="width:0%"></div></div>
-    <div style="font-size:0.7rem;color:var(--text-muted);margin-top:4px;text-align:right" id="dashBalanceLabel">— remaining</div>
+    <div style="font-size:0.82rem;color:var(--text-muted);margin-top:4px;text-align:right" id="dashBalanceLabel">— remaining</div>
+    <div style="display:flex;justify-content:space-around;margin-top:10px;padding-top:10px;border-top:1px solid var(--card-border)" id="dashMacros">
+      <span style="font-size:0.88rem;color:var(--text-secondary)">🥩 <strong id="dashProtein">0</strong>g protein</span>
+      <span style="font-size:0.88rem;color:var(--text-secondary)">🍞 <strong id="dashCarbs">0</strong>g carbs</span>
+      <span style="font-size:0.88rem;color:var(--text-secondary)">🧈 <strong id="dashFat">0</strong>g fat</span>
+    </div>
   </div>
   <div class="card">
     <div class="card-title">📅 This Week</div>
     <div class="week-grid" id="weekGrid"></div>
   </div>
-  <div class="card">
-    <div class="card-title">📉 Weight Trend</div>
-    <div class="chart-container"><canvas id="weightChart"></canvas></div>
-  </div>
+
   <div id="insightsContainer"></div>
 </div>
 
@@ -951,11 +997,14 @@ input[type="range"]::-webkit-slider-thumb {
 <div class="page" id="pageCheckin">
   <div class="card">
     <div class="card-title">🌅 Daily Check-In</div>
-    <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:16px">How are you feeling today? This helps track patterns between stress, sleep, and your goals.</p>
+    <div class="form-group">
+      <label class="form-label">⚖️ Morning Weight (lbs)</label>
+      <input type="number" step="0.1" class="form-input" id="checkinWeight" placeholder="178.0">
+    </div>
     <div class="slider-group">
       <div class="slider-header"><span class="form-label" style="margin:0">😤 Stress Level</span><span class="slider-value" id="stressVal" style="color:var(--accent-green)">3</span></div>
       <input type="range" id="stressSlider" min="1" max="10" value="3" oninput="updateSlider('stress')">
-      <div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--text-muted);margin-top:4px"><span>Calm</span><span>Moderate</span><span>Very High</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:0.85rem;color:var(--text-muted);margin-top:4px"><span>Calm</span><span>Moderate</span><span>Very High</span></div>
     </div>
     <div class="form-group">
       <label class="form-label">😴 Sleep Quality</label>
@@ -970,7 +1019,7 @@ input[type="range"]::-webkit-slider-thumb {
     <div class="slider-group">
       <div class="slider-header"><span class="form-label" style="margin:0">⚡ Energy & Motivation</span><span class="slider-value" id="energyVal" style="color:var(--accent-orange)">3</span></div>
       <input type="range" id="energySlider" min="1" max="5" value="3" oninput="updateSlider('energy')">
-      <div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--text-muted);margin-top:4px"><span>Dragging</span><span>Moderate</span><span>Fired Up</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:0.85rem;color:var(--text-muted);margin-top:4px"><span>Dragging</span><span>Moderate</span><span>Fired Up</span></div>
     </div>
     <div class="form-group">
       <label class="form-label">📝 Optional Note</label>
@@ -998,10 +1047,10 @@ input[type="range"]::-webkit-slider-thumb {
     </div>
     <div style="text-align:center;margin:10px 0">
       <span style="font-family:'JetBrains Mono';font-size:1.2rem;font-weight:700;color:var(--accent-orange)" id="calConsumed">0</span>
-      <span style="font-size:0.8rem;color:var(--text-muted)"> cal consumed today</span>
+      <span style="font-size:0.88rem;color:var(--text-muted)"> cal consumed today</span>
     </div>
     <div class="calorie-bar-container"><div class="calorie-bar" id="calorieBar" style="width:0%"></div></div>
-    <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--text-muted);margin-top:4px">
+    <div style="display:flex;justify-content:space-between;font-size:0.82rem;color:var(--text-muted);margin-top:4px">
       <span id="macroSummary">🥩 0g protein · 🍞 0g carbs</span>
       <span id="calRemaining">— remaining</span>
     </div>
@@ -1021,7 +1070,7 @@ input[type="range"]::-webkit-slider-thumb {
 <div class="page" id="pageNutrition">
   <div class="card">
     <div class="card-title">🤖 AI Calorie Estimator</div>
-    <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:12px">Describe what you ate in plain language. Estimates include +5% conservative adjustment.</p>
+    <p style="font-size:0.95rem;color:var(--text-secondary);margin-bottom:12px">Describe what you ate in plain language. Estimates include +5% conservative adjustment.</p>
     <div class="ai-food-input">
       <input type="text" id="foodInput" placeholder="e.g., bowl of multigrain Cheerios with almond milk">
       <button id="estimateBtn" onclick="estimateCalories()">🔍 Estimate</button>
@@ -1057,7 +1106,7 @@ input[type="range"]::-webkit-slider-thumb {
     <div class="slider-group" id="rpeSection">
       <div class="slider-header"><span class="form-label" style="margin:0">💪 Effort (RPE)</span><span class="slider-value" id="rpeVal" style="color:var(--accent-purple)">5</span></div>
       <input type="range" id="rpeSlider" min="1" max="10" value="5" oninput="updateSlider('rpe')">
-      <div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--text-muted);margin-top:4px"><span>Easy</span><span>Moderate</span><span>Max Effort</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:0.85rem;color:var(--text-muted);margin-top:4px"><span>Easy</span><span>Moderate</span><span>Max Effort</span></div>
     </div>
     <div class="form-group" id="durationSection" style="display:none">
       <label class="form-label">⏱ Duration (minutes)</label>
@@ -1075,7 +1124,7 @@ input[type="range"]::-webkit-slider-thumb {
       <input type="number" class="form-input" id="workoutHR" placeholder="e.g., 135">
     </div>
     <div class="form-group" id="burnSection">
-      <div style="font-size:0.78rem;color:var(--accent-orange);font-style:italic;margin-bottom:6px" id="burnEstimate"></div>
+      <div style="font-size:0.9rem;color:var(--accent-orange);font-style:italic;margin-bottom:6px" id="burnEstimate"></div>
       <label class="form-label">🔥 Calories Burned (optional — leave blank to use AI estimate)</label>
       <input type="number" class="form-input" id="workoutCalsBurned" placeholder="e.g., 320 from bike display" oninput="updateBurnEstimate()">
     </div>
@@ -1100,30 +1149,28 @@ input[type="range"]::-webkit-slider-thumb {
 </div>
 
 <!-- ===== WEIGHT ===== -->
-<div class="page" id="pageWeight">
+
+
+<!-- ===== INSIGHTS ===== -->
+<div class="page" id="pageInsights">
   <div class="card">
-    <div class="card-title">⚖️ Log Weight</div>
-    <div class="form-group">
-      <label class="form-label">Today's Weight (lbs)</label>
-      <input type="number" step="0.1" class="form-input" id="weightInput" placeholder="179.0">
-    </div>
-    <button class="btn-primary" onclick="saveWeight()">Log Weight</button>
-  </div>
-  <div class="card">
-    <div class="card-title">📊 Your Metabolic Profile</div>
+    <div class="card-title">📊 Metabolic Profile</div>
     <div class="stat-grid">
       <div class="stat-card"><div class="stat-value stat-teal" id="bmrValue">1,770</div><div class="stat-label">BMR (cal/day)</div></div>
       <div class="stat-card"><div class="stat-value stat-blue" id="tdeeValue">2,420</div><div class="stat-label">TDEE (moderate)</div></div>
     </div>
-    <div style="font-size:0.78rem;color:var(--text-secondary);line-height:1.6;padding:8px 0">
-      <strong>Daily Targets</strong> (with 5% conservative adjustments):<br>
+    <div style="font-size:0.88rem;color:var(--text-secondary);line-height:1.8;padding:8px 0">
+      <strong>Daily Calorie Targets</strong> (with 5% conservative adjustments):<br>
       🛋 Rest: <span id="calRest" style="font-family:'JetBrains Mono';font-weight:700">1,250</span> cal &nbsp;|&nbsp;
       🚶 Light: <span id="calLight" style="font-family:'JetBrains Mono';font-weight:700">1,480</span> cal<br>
       💪 Moderate: <span id="calModerate" style="font-family:'JetBrains Mono';font-weight:700">1,670</span> cal &nbsp;|&nbsp;
       🔥 Intense: <span id="calIntense" style="font-family:'JetBrains Mono';font-weight:700">1,860</span> cal
     </div>
   </div>
-  <div class="card"><div class="card-title">📋 Weight History</div><div id="weightHistory"></div></div>
+  <div class="card">
+    <div class="card-title">📉 Weight Trend</div>
+    <div class="chart-container"><canvas id="weightChart"></canvas></div>
+  </div>
   <div class="card">
     <div class="card-title">📈 7-Day Rolling Average</div>
     <div class="stat-grid">
@@ -1131,10 +1178,7 @@ input[type="range"]::-webkit-slider-thumb {
       <div class="stat-card"><div class="stat-value stat-blue" id="weeklyChange">—</div><div class="stat-label">Weekly Δ</div></div>
     </div>
   </div>
-</div>
-
-<!-- ===== INSIGHTS ===== -->
-<div class="page" id="pageInsights">
+  <div class="card"><div class="card-title">📋 Weight History</div><div id="weightHistory"></div></div>
   <div class="card">
     <div class="card-title">🧠 Weekly Summary</div>
     <div class="stat-grid">
@@ -1144,7 +1188,7 @@ input[type="range"]::-webkit-slider-thumb {
       <div class="stat-card"><div class="stat-value stat-blue" id="insWorkouts">—</div><div class="stat-label">Workouts</div></div>
     </div>
   </div>
-  <div class="card"><div class="card-title">🔗 Stress–Behavior Patterns</div><div id="correlationInsights"></div><div id="noInsightsMsg" style="font-size:0.85rem;color:var(--text-muted);padding:8px 0">Log at least 7 days to see patterns.</div></div>
+  <div class="card"><div class="card-title">🔗 Stress–Behavior Patterns</div><div id="correlationInsights"></div><div id="noInsightsMsg" style="font-size:0.92rem;color:var(--text-muted);padding:8px 0">Log at least 7 days to see patterns.</div></div>
   <div class="card"><div class="card-title">💡 Adaptive Suggestions</div><div id="adaptiveSuggestions"></div></div>
   <div class="card">
     <div class="card-title">🔥 Streak</div>
@@ -1173,11 +1217,10 @@ input[type="range"]::-webkit-slider-thumb {
   <button class="nav-item" onclick="showPage('Checkin')"><span class="nav-icon">🌅</span><span>Check-In</span></button>
   <button class="nav-item" onclick="showPage('Nutrition')"><span class="nav-icon">🍽</span><span>Food</span></button>
   <button class="nav-item" onclick="showPage('Workout')"><span class="nav-icon">🏋️</span><span>Workout</span></button>
-  <button class="nav-item" onclick="showPage('Weight')"><span class="nav-icon">⚖️</span><span>Weight</span></button>
   <button class="nav-item" onclick="showPage('Insights')"><span class="nav-icon">🧠</span><span>Insights</span></button>
 </nav>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script><script>
-// ===== ToLife! v2.1 — App Logic =====
+// ===== ToLife! v3.1 — App Logic =====
 // L'Chaim — to health, to strength
 
 const CONFIG = {
@@ -1283,8 +1326,7 @@ function showPage(name) {
   document.getElementById('page' + name).classList.add('active');
   event.currentTarget.classList.add('active');
   if (name === 'Dashboard') refreshDashboard();
-  if (name === 'Insights') refreshInsights();
-  if (name === 'Weight') { updateMetabolicDisplay(); renderWeightHistory(); renderWeightStats(); }
+  if (name === 'Insights') { refreshInsights(); updateMetabolicDisplay(); renderWeightChart(); renderWeightHistory(); renderWeightStats(); }
   if (name === 'Workout') { renderWorkoutHistory(); renderMyWorkouts(); }
   if (name === 'Nutrition') { renderMyFoods(); renderFoodLog(); updateCalorieSummary(); }
 }
@@ -1329,6 +1371,13 @@ function saveCheckin() {
   const stress = parseInt(document.getElementById('stressSlider').value);
   const energy = parseInt(document.getElementById('energySlider').value);
   const note = document.getElementById('checkinNote').value.trim();
+  // Save weight if entered
+  const checkinW = parseFloat(document.getElementById('checkinWeight').value);
+  if (checkinW && checkinW >= 100 && checkinW <= 400) {
+    data.weights = data.weights.filter(e => e.date !== today());
+    data.weights.push({ date: today(), weight: checkinW });
+    document.getElementById('checkinWeight').value = '';
+  }
   data.checkins = data.checkins.filter(c => c.date !== today());
   data.checkins.push({ date: today(), stress, sleep: currentSleep, energy, note });
   // Update calorie entry WITHOUT destroying existing food log
@@ -1406,7 +1455,7 @@ function renderWorkoutHistory() {
   c.innerHTML = recent.map((w, i) => {
     const ex = []; if (w.duration) ex.push(w.duration+'min'); if (w.hr) ex.push('❤️'+w.hr); if (w.focus) ex.push(w.focus==='fatburn'?'🔥 fat burn':'💓 intensity');
     if (w.calsBurned) ex.push('🔥'+w.calsBurned+' cal');
-    return '<div class="log-entry"><span class="log-date">'+formatDate(w.date)+'</span><div class="log-detail"><span class="log-badge '+badges[w.type]+'">'+labels[w.type]+'</span><span style="font-size:0.8rem;color:var(--text-secondary)">'+(ex.length?' · '+ex.join(' · '):'')+'</span>'+(w.note?'<div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px">'+w.note+'</div>':'')+'</div>'+(w.type!=='rest'?'<span class="log-rpe" style="color:var(--accent-purple)">RPE '+w.rpe+'</span>':'')+'<button class="delete-btn" onclick="deleteWorkout('+i+')" title="Delete">×</button></div>';
+    return '<div class="log-entry"><span class="log-date">'+formatDate(w.date)+'</span><div class="log-detail"><span class="log-badge '+badges[w.type]+'">'+labels[w.type]+'</span><span style="font-size:0.9rem;color:var(--text-secondary)">'+(ex.length?' · '+ex.join(' · '):'')+'</span>'+(w.note?'<div style="font-size:0.88rem;color:var(--text-muted);margin-top:2px">'+w.note+'</div>':'')+'</div>'+(w.type!=='rest'?'<span class="log-rpe" style="color:var(--accent-purple)">RPE '+w.rpe+'</span>':'')+'<button class="delete-btn" onclick="deleteWorkout('+i+')" title="Delete">×</button></div>';
   }).join('');
 }
 
@@ -1457,8 +1506,8 @@ function renderMyWorkouts() {
         '<div class="my-food-cal">' + details.join(' · ') + (w.count ? ' · used ' + w.count + '×' : '') + '</div>' +
       '</div>' +
       '<div style="display:flex;gap:6px;align-items:center">' +
-        '<button class="btn-primary" onclick="quickLogMyWorkout(\x27' + wid + '\x27)" style="font-size:0.7rem;padding:6px 10px;margin:0;white-space:nowrap">⚡ Log</button>' +
-        '<button class="btn-secondary" onclick="prefillMyWorkout(\x27' + wid + '\x27)" style="font-size:0.7rem;padding:6px 10px;margin:0;white-space:nowrap">✏️ Edit</button>' +
+        '<button class="btn-primary" onclick="quickLogMyWorkout(\x27' + wid + '\x27)" style="font-size:0.82rem;padding:7px 12px;margin:0;white-space:nowrap">⚡ Log</button>' +
+        '<button class="btn-secondary" onclick="prefillMyWorkout(\x27' + wid + '\x27)" style="font-size:0.82rem;padding:7px 12px;margin:0;white-space:nowrap">✏️ Edit</button>' +
         '<button class="my-food-remove" onclick="removeMyWorkout(\x27' + wid + '\x27)" title="Remove">×</button>' +
       '</div></div>';
   }).join('');
@@ -1829,7 +1878,7 @@ function renderFoodLog() {
   const c = document.getElementById('foodLogList'); const log = getTodayFoodLog();
   if (!log.length) { c.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:0.85rem">No food logged today yet.</div>'; return; }
   c.innerHTML = log.map(f =>
-    '<div class="food-log-item"><span class="food-log-name">'+f.name+' <span style="color:var(--text-muted);font-size:0.75rem">'+(f.time||'')+'</span></span><span class="food-log-cal">'+f.calories+'</span><button class="food-log-remove" onclick="removeFoodLogItem(\''+f.id+'\')" title="Remove">×</button></div>'
+    '<div class="food-log-item"><span class="food-log-name">'+f.name+' <span style="color:var(--text-muted);font-size:0.85rem">'+(f.time||'')+'</span></span><span class="food-log-cal">'+f.calories+'</span><button class="food-log-remove" onclick="removeFoodLogItem(\''+f.id+'\')" title="Remove">×</button></div>'
   ).join('');
 }
 
@@ -1852,15 +1901,15 @@ function updateCalorieSummary() {
   document.getElementById('calConsumed').textContent = consumed.toLocaleString();
   const tP = e.log?e.log.reduce((s,f)=>s+(f.protein||0),0):0;
   const tCa = e.log?e.log.reduce((s,f)=>s+(f.carbs||0),0):0;
-  document.getElementById('macroSummary').textContent = '🥩 '+tP+'g protein · 🍞 '+tCa+'g carbs';
+  document.getElementById('macroSummary').textContent = '🥩 '+tP+'g protein · 🍞 '+tCa+'g carbs · 🧈 '+(e.log?e.log.reduce((s,f)=>s+(f.fat||0),0):0)+'g fat';
 }
 
 // ===== DASHBOARD =====
 function refreshDashboard() {
   const w = getCurrentWeight(); const lost = CONFIG.startWeight - w; const toGo = w - CONFIG.goalWeight;
   const pct = Math.max(0, Math.min(100, (lost / (CONFIG.startWeight - CONFIG.goalWeight)) * 100));
-  const circ = 2 * Math.PI * 62;
-  document.getElementById('progressRing').style.strokeDashoffset = circ - (pct/100) * circ;
+  const progBar = document.getElementById('progressBar');
+  if (progBar) progBar.style.width = Math.min(pct, 100) + '%';
   document.getElementById('lbsLost').textContent = Math.max(0, lost).toFixed(1);
   const weeksIn = Math.floor(daysBetween(data.startDate, today()) / 7) + 1;
   document.getElementById('goalSubtitle').innerHTML = 'Week <strong>'+Math.min(weeksIn,CONFIG.goalWeeks)+'</strong> of '+CONFIG.goalWeeks+' — <strong>'+Math.max(0,toGo).toFixed(1)+'</strong> lbs to go';
@@ -1889,7 +1938,15 @@ function refreshDashboard() {
     balBar.classList.toggle('over', consumed > totalBudget);
     balLabel.textContent = consumed > totalBudget ? (consumed - totalBudget).toLocaleString() + ' cal over budget' : remaining.toLocaleString() + ' cal remaining';
   }
-  renderWeekGrid(); renderNudge(todayCheckin); renderWeightChart(); renderDashboardInsights();
+  // Update dashboard macros
+  const todayLog = todayCal && todayCal.log ? todayCal.log : [];
+  const dashP = todayLog.reduce((s,f) => s + (f.protein||0), 0);
+  const dashC = todayLog.reduce((s,f) => s + (f.carbs||0), 0);
+  const dashF = todayLog.reduce((s,f) => s + (f.fat||0), 0);
+  if (document.getElementById('dashProtein')) document.getElementById('dashProtein').textContent = dashP;
+  if (document.getElementById('dashCarbs')) document.getElementById('dashCarbs').textContent = dashC;
+  if (document.getElementById('dashFat')) document.getElementById('dashFat').textContent = dashF;
+  renderWeekGrid(); renderNudge(todayCheckin); renderDashboardInsights();
 }
 
 function renderWeekGrid() {
@@ -1908,7 +1965,7 @@ function renderWeekGrid() {
       const priority = ['weights','cardio','stretch','rest'];
       const best = dayWorkouts.sort((a,b) => priority.indexOf(a.type) - priority.indexOf(b.type))[0];
       icon = icons[best.type] || '✓';
-      if (dayWorkouts.length > 1) icon += '<span style="font-size:0.5rem;vertical-align:super">+' + (dayWorkouts.length-1) + '</span>';
+      if (dayWorkouts.length > 1) icon += '<span style="font-size:0.7rem;vertical-align:super">+' + (dayWorkouts.length-1) + '</span>';
     }
     h += '<div class="week-day '+(dayWorkouts.length?'completed':'')+' '+(ds===today()?'today':'')+'">' +
          '<div class="week-day-label">'+dn[i]+'</div>' +
@@ -2034,8 +2091,18 @@ function init() {
   document.getElementById('calDetail').textContent='TDEE '+calcTDEE(w,'moderate').toLocaleString()+' − '+CONFIG.deficitPerDay+' deficit (with 5% adjustments)';
   const tc=data.checkins.find(c=>c.date===today());
   if(tc){document.getElementById('stressSlider').value=tc.stress;updateSlider('stress');setSleep(tc.sleep);document.getElementById('energySlider').value=tc.energy;updateSlider('energy');if(tc.note)document.getElementById('checkinNote').value=tc.note;}
+  const tw=data.weights.find(w=>w.date===today());
+  if(tw){document.getElementById('checkinWeight').placeholder=tw.weight+' (logged)';} else {document.getElementById('checkinWeight').placeholder=getCurrentWeight().toFixed(1);}
   const tca=data.calories.find(c=>c.date===today());
-  if(tca){currentActivity=tca.activity||'moderate';if(tca.adherence)currentAdherence=tca.adherence;}
+  if(tca){currentActivity=tca.activity||'moderate';currentAdherence=tca.adherence||'';} else {currentAdherence='';}
+  // Reset adherence button highlights for new day
+  document.querySelectorAll('#adherenceSelect .quick-btn').forEach(b => b.classList.remove('active'));
+  if(currentAdherence){
+    const labels={'great':'😊 Great','good':'✅ Good','ok':'⚠️ OK','poor':'❌ Poor'};
+    document.querySelectorAll('#adherenceSelect .quick-btn').forEach(b => {
+      if(b.textContent.trim()===labels[currentAdherence]) b.classList.add('active');
+    });
+  }
   document.getElementById('foodInput').addEventListener('keypress',e=>{if(e.key==='Enter')estimateCalories();});
   document.getElementById('dataModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeDataModal();});
   if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
