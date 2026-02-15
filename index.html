@@ -136,7 +136,7 @@ body {
 }
 
 .version-tag {
-  font-size: 0.6rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
   background: var(--bg-input);
   padding: 2px 6px;
@@ -935,7 +935,7 @@ input[type="range"]::-webkit-slider-thumb {
     </div>
   </div>
   <div class="header-actions">
-    <span class="version-tag">v3.1</span>
+    <span class="version-tag">v5.2</span>
     <button class="data-btn" onclick="showDataModal()">💾</button>
     <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">☀️</button>
   </div>
@@ -960,7 +960,9 @@ input[type="range"]::-webkit-slider-thumb {
         <div class="progress-linear-label" id="goalSubtitle">Week 1 of 8 — 21.0 lbs to go</div>
       </div>
     </div>
+    <div style="font-size:0.9rem;margin-top:6px;font-weight:500" id="goalPace"></div>
   </div>
+  <div id="dashShabbat" style="display:none;text-align:center;padding:8px;margin-bottom:8px;background:var(--bg-input);border-radius:12px;font-size:0.92rem;color:var(--accent-blue)">🕯️ Shabbat Mode — Adjusted targets for today, weekdays will compensate</div>
   <div class="stat-grid">
     <div class="stat-card"><div class="stat-value stat-green" id="dashWeight">179.0</div><div class="stat-label">Current lbs</div></div>
     <div class="stat-card"><div class="stat-value stat-blue" id="dashCalBudget">—</div><div class="stat-label">Cal Budget</div></div>
@@ -978,7 +980,10 @@ input[type="range"]::-webkit-slider-thumb {
     </div>
     <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:6px">Budget + Burned − Consumed = Remaining</div>
     <div class="calorie-bar-container"><div class="calorie-bar" id="dashBalanceBar" style="width:0%"></div></div>
-    <div style="font-size:0.82rem;color:var(--text-muted);margin-top:4px;text-align:right" id="dashBalanceLabel">— remaining</div>
+    <div style="display:flex;justify-content:space-between;font-size:0.82rem;color:var(--text-muted);margin-top:4px">
+      <span><strong id="dashConsumedBar" style="color:var(--accent-teal)">0</strong> cal consumed</span>
+      <span id="dashBalanceLabel">— remaining</span>
+    </div>
     <div style="display:flex;justify-content:space-around;margin-top:10px;padding-top:10px;border-top:1px solid var(--card-border)" id="dashMacros">
       <span style="font-size:0.88rem;color:var(--text-secondary)">🥩 <strong id="dashProtein">0</strong>g protein</span>
       <span style="font-size:0.88rem;color:var(--text-secondary)">🍞 <strong id="dashCarbs">0</strong>g carbs</span>
@@ -1000,6 +1005,15 @@ input[type="range"]::-webkit-slider-thumb {
     <div class="form-group">
       <label class="form-label">⚖️ Morning Weight (lbs)</label>
       <input type="number" step="0.1" class="form-input" id="checkinWeight" placeholder="178.0">
+    </div>
+    <div class="form-group">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+        <input type="checkbox" id="shabbatToggle" style="width:20px;height:20px;accent-color:var(--accent-blue)">
+        <span class="form-label" style="margin:0">🕯️ Shabbat / Special Occasion</span>
+      </label>
+      <div style="font-size:0.85rem;color:var(--text-muted);margin-top:4px;margin-left:30px">
+        Today: +400 cal for meal · Tomorrow: auto-sets rest day · Remaining days compensate
+      </div>
     </div>
     <div class="slider-group">
       <div class="slider-header"><span class="form-label" style="margin:0">😤 Stress Level</span><span class="slider-value" id="stressVal" style="color:var(--accent-green)">3</span></div>
@@ -1079,7 +1093,7 @@ input[type="range"]::-webkit-slider-thumb {
   </div>
   <div class="card">
     <div class="my-foods-header">
-      <div class="card-title" style="margin:0">⭐ My Foods — Tap to select, add to today</div>
+      <div class="card-title" style="margin:0">⭐ My Foods & Meals — Tap to select, add to today</div>
     </div>
     <div class="my-foods-list" id="myFoodsList"></div>
     <button class="btn-primary" id="addSelectedBtn" onclick="addSelectedMyFoods()" style="display:none;margin-top:10px;font-size:0.85rem;padding:10px">✅ Add Selected</button>
@@ -1092,6 +1106,16 @@ input[type="range"]::-webkit-slider-thumb {
 
 <!-- ===== WORKOUT ===== -->
 <div class="page" id="pageWorkout">
+  <div class="card">
+    <div class="card-title">🚶 Quick Log: Walking</div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <input type="number" class="form-input" id="walkingSteps" placeholder="e.g., 5000" oninput="updateWalkingEstimate()" style="flex:1">
+      <span style="font-size:0.92rem;color:var(--text-secondary)">steps</span>
+      <button class="btn-primary" onclick="logWalking()" style="white-space:nowrap;margin:0">🚶 Log</button>
+    </div>
+    <div style="font-size:0.88rem;margin-top:6px;font-weight:500" id="walkingEstimate"></div>
+  </div>
+
   <div class="card">
     <div class="card-title">🏋️ Log Workout</div>
     <div class="form-group">
@@ -1220,7 +1244,7 @@ input[type="range"]::-webkit-slider-thumb {
   <button class="nav-item" onclick="showPage('Insights')"><span class="nav-icon">🧠</span><span>Insights</span></button>
 </nav>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script><script>
-// ===== ToLife! v3.1 — App Logic =====
+// ===== ToLife! v5.2 — App Logic =====
 // L'Chaim — to health, to strength
 
 const CONFIG = {
@@ -1231,14 +1255,14 @@ const CONFIG = {
 };
 
 let data = {
-  weights: [], workouts: [], checkins: [], calories: [], myFoods: [], myWorkouts: [], startDate: null
+  weights: [], workouts: [], checkins: [], calories: [], myFoods: [], myWorkouts: [], myMeals: [], startDate: null
 };
 
 const STORAGE_KEY = 'tolife_data';
 
 function loadData() {
   const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved) { const p = JSON.parse(saved); data = { ...data, ...p }; if (!data.myFoods) data.myFoods = []; if (!data.myWorkouts) data.myWorkouts = []; }
+  if (saved) { const p = JSON.parse(saved); data = { ...data, ...p }; if (!data.myFoods) data.myFoods = []; if (!data.myWorkouts) data.myWorkouts = []; if (!data.myMeals) data.myMeals = []; }
   if (!data.startDate) { data.startDate = today(); saveData(); }
 }
 
@@ -1371,6 +1395,7 @@ function saveCheckin() {
   const stress = parseInt(document.getElementById('stressSlider').value);
   const energy = parseInt(document.getElementById('energySlider').value);
   const note = document.getElementById('checkinNote').value.trim();
+  const shabbatMode = document.getElementById('shabbatToggle') ? document.getElementById('shabbatToggle').checked : false;
   // Save weight if entered
   const checkinW = parseFloat(document.getElementById('checkinWeight').value);
   if (checkinW && checkinW >= 100 && checkinW <= 400) {
@@ -1379,17 +1404,74 @@ function saveCheckin() {
     document.getElementById('checkinWeight').value = '';
   }
   data.checkins = data.checkins.filter(c => c.date !== today());
-  data.checkins.push({ date: today(), stress, sleep: currentSleep, energy, note });
+  data.checkins.push({ date: today(), stress, sleep: currentSleep, energy, note, shabbat: shabbatMode });
   // Update calorie entry WITHOUT destroying existing food log
-  const w = getCurrentWeight(); const target = calcTarget(w, currentActivity);
+  const w = getCurrentWeight();
+  let target = calcTarget(w, currentActivity);
+  // Shabbat / Special Day: cascading 2-day adjustment + weekly compensation
+  if (shabbatMode) {
+    // TODAY: +400 cal for big meal
+    target += 400;
+
+    // TOMORROW: auto-set as rest day with reduced target
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomStr = tomorrow.getFullYear()+'-'+String(tomorrow.getMonth()+1).padStart(2,'0')+'-'+String(tomorrow.getDate()).padStart(2,'0');
+    const tomTarget = calcTarget(w, 'rest');
+    const tomExisting = data.calories.find(c => c.date === tomStr);
+    if (tomExisting) {
+      tomExisting.target = tomTarget;
+      tomExisting.shabbat = true;
+      tomExisting.activity = 'rest';
+    } else {
+      data.calories.push({ date: tomStr, activity: 'rest', target: tomTarget, shabbat: true, consumed: 0, adherence: '', log: [] });
+    }
+    // Pre-set tomorrow's checkin as rest/shabbat
+    if (!data.checkins.find(c => c.date === tomStr)) {
+      data.checkins.push({ date: tomStr, stress: 2, sleep: 4, energy: 3, note: 'Rest day (auto-set)', shabbat: true });
+    } else {
+      const tomC = data.checkins.find(c => c.date === tomStr);
+      tomC.shabbat = true;
+    }
+  }
+
+  // Weekly compensation: calculate total extra from Shabbat/special days and spread across remaining normal days
+  const weekStart = new Date(); weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+  const wsStr = weekStart.getFullYear()+'-'+String(weekStart.getMonth()+1).padStart(2,'0')+'-'+String(weekStart.getDate()).padStart(2,'0');
+  const weekEnd = new Date(weekStart); weekEnd.setDate(weekEnd.getDate() + 7);
+  const weStr = weekEnd.getFullYear()+'-'+String(weekEnd.getMonth()+1).padStart(2,'0')+'-'+String(weekEnd.getDate()).padStart(2,'0');
+  // Find all shabbat/special days this week (including today if just toggled, and tomorrow if auto-set)
+  const specialDays = data.calories.filter(c => c.date >= wsStr && c.date < weStr && c.shabbat);
+  if (!shabbatMode && specialDays.length > 0) {
+    // Total extra calories granted on special days
+    const totalExtra = specialDays.reduce((sum, c) => {
+      const baseTarget = calcTarget(w, c.activity === 'rest' ? 'rest' : 'moderate');
+      const extra = c.target - baseTarget;
+      return sum + (extra > 0 ? extra : 0);
+    }, 0);
+    // Count remaining non-special days in week (including today)
+    const todayDow = new Date().getDay();
+    let normalDaysLeft = 0;
+    for (let d = todayDow; d < 7; d++) {
+      const checkDate = new Date(weekStart);
+      checkDate.setDate(checkDate.getDate() + d);
+      const cdStr = checkDate.getFullYear()+'-'+String(checkDate.getMonth()+1).padStart(2,'0')+'-'+String(checkDate.getDate()).padStart(2,'0');
+      if (!specialDays.find(s => s.date === cdStr)) normalDaysLeft++;
+    }
+    if (normalDaysLeft > 0 && totalExtra > 0) {
+      const dailyComp = Math.round(totalExtra / normalDaysLeft);
+      target = Math.max(target - dailyComp, 1200);
+    }
+  }
   const existing = data.calories.find(c => c.date === today());
   if (existing) {
     existing.activity = currentActivity;
     existing.target = target;
+    existing.shabbat = shabbatMode;
     existing.adherence = currentAdherence;
     existing.consumed = existing.log ? existing.log.reduce((s, f) => s + f.calories, 0) : 0;
   } else {
-    data.calories.push({ date: today(), activity: currentActivity, target, consumed: 0, adherence: currentAdherence, log: [] });
+    data.calories.push({ date: today(), activity: currentActivity, target, shabbat: shabbatMode, consumed: 0, adherence: currentAdherence, log: [] });
   }
   saveData(); showToast('✅ Check-in saved!'); refreshDashboard();
 }
@@ -1488,11 +1570,24 @@ function renderMyWorkouts() {
   const c = document.getElementById('myWorkoutsList');
   if (!c) return;
   if (!data.myWorkouts || !data.myWorkouts.length) {
-    c.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:0.85rem">No saved workouts yet. Log a workout with a note, then tap "Save to My Workouts".</div>';
+    c.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:0.92rem">No saved workouts yet. Log a workout with a note, then tap "Save to My Workouts".</div>';
     return;
   }
   const icons = {weights:'🏋️', cardio:'🚴', stretch:'🧘', rest:'🛋'};
-  const sorted = [...data.myWorkouts].sort((a, b) => (b.count||0) - (a.count||0));
+  const typeLabels = {cardio:'🚴 Cardio', weights:'🏋️ Weights', stretch:'🧘 Stretch', rest:'🛋 Rest'};
+  const typeOrder = ['cardio','weights','stretch','rest'];
+  let html = '';
+  for (const type of typeOrder) {
+    const group = data.myWorkouts.filter(w => w.type === type).sort((a,b) => a.name.localeCompare(b.name));
+    if (!group.length) continue;
+    html += '<div style="font-size:0.85rem;font-weight:700;color:var(--accent-teal);text-transform:uppercase;letter-spacing:1px;padding:8px 0 4px;margin-top:4px">' + typeLabels[type] + '</div>';
+    html += group.map(w => renderMyWorkoutItem(w, icons)).join('');
+  }
+  c.innerHTML = html;
+}
+function renderMyWorkoutItem(w, icons) {
+  // Original render logic per item
+  const sorted = [w]; // wrap for compatibility
   c.innerHTML = sorted.map(w => {
     const details = [];
     if (w.duration) details.push(w.duration + 'min');
@@ -1569,6 +1664,83 @@ function removeMyWorkout(id) {
 }
 
 
+// ===== FOOD HEALTH CATEGORIES =====
+function getFoodHealth(food) {
+  const name = (food.name || '').toLowerCase();
+  const cal = food.calories || 0;
+  const protein = food.protein || 0;
+  const fat = food.fat || 0;
+  const carbs = food.carbs || 0;
+
+  // GREEN: high protein/low cal, vegetables, fruits, lean proteins, whole grains
+  const greenKeys = ['chicken','turkey','salmon','tuna','shrimp','egg white','oats','steel cut',
+    'salad','spinach','broccoli','carrot','celery','vegetable','veggie','green bean','orange',
+    'apple','berries','banana','olive','greek yogurt','cottage cheese','tofu','quinoa',
+    'almond milk','sweet potato','lentil','bean','fish','cilantro'];
+  
+  // RED: high sugar, high fat treats, desserts, fried
+  const redKeys = ['pie','cake','babka','cookie','ice cream','candy','chocolate','brownie',
+    'donut','doughnut','pastry','fries','fried','soda','coke','pepsi','scotch','whisky',
+    'whiskey','vodka','rum','gin','beer','wine','cocktail','cream cheese','bacon'];
+
+  for (const k of greenKeys) { if (name.includes(k)) return 'green'; }
+  for (const k of redKeys) { if (name.includes(k)) return 'red'; }
+  
+  // Calorie density check: high cal + high fat ratio = yellow/red
+  if (cal > 300 && fat > 15) return 'red';
+  if (cal > 200 && fat > 12) return 'yellow';
+  
+  // Protein-rich = green
+  if (protein > 15 && cal < 300) return 'green';
+  
+  return 'yellow'; // default moderate
+}
+
+function healthIcon(category) {
+  return category === 'green' ? '🟢' : category === 'red' ? '🔴' : '🟡';
+}
+
+function healthLabel(category) {
+  return category === 'green' ? 'Healthy' : category === 'red' ? 'Limit' : 'Moderate';
+}
+
+
+// ===== WALKING CALCULATOR =====
+function calcWalkingCals(steps) {
+  const w = getCurrentWeight();
+  // ~0.04 cal per step per pound, with conservative adjustment
+  return Math.round(steps * w * 0.00035 * CONFIG.expendAdjust);
+}
+
+function updateWalkingEstimate() {
+  const steps = parseInt(document.getElementById('walkingSteps').value) || 0;
+  const est = document.getElementById('walkingEstimate');
+  if (steps > 0) {
+    const cals = calcWalkingCals(steps);
+    est.textContent = '~' + cals + ' cal · RPE auto-set to ' + (steps > 7500 ? '3' : '2');
+    est.style.color = 'var(--accent-green)';
+  } else { est.textContent = ''; }
+}
+
+function logWalking() {
+  const steps = parseInt(document.getElementById('walkingSteps').value);
+  if (!steps || steps < 100) { showToast('⚠️ Enter your steps'); return; }
+  const cals = calcWalkingCals(steps);
+  const rpe = steps > 10000 ? 4 : steps > 7500 ? 3 : 2;
+  data.workouts.push({
+    date: today(), type: 'cardio', rpe,
+    duration: Math.round(steps / 100),
+    focus: 'fatburn', hr: 0,
+    note: 'Walking ' + steps.toLocaleString() + ' steps',
+    calsBurned: cals
+  });
+  saveData();
+  document.getElementById('walkingSteps').value = '';
+  document.getElementById('walkingEstimate').textContent = '';
+  showToast('🚶 ' + steps.toLocaleString() + ' steps logged! ' + cals + ' cal');
+  renderWorkoutHistory(); renderMyWorkouts(); refreshDashboard();
+}
+
 // ===== WEIGHT =====
 function saveWeight() {
   const w = parseFloat(document.getElementById('weightInput').value);
@@ -1607,6 +1779,15 @@ function renderWeightStats() {
 
 // ===== WEIGHT CHART =====
 let weightChart = null;
+
+// Custom tooltip positioner: fixed top-right of chart
+if (typeof Chart !== 'undefined') {
+  Chart.Tooltip.positioners.topRight = function(elements, eventPosition) {
+    const chart = this.chart;
+    return { x: chart.chartArea.right - 10, y: chart.chartArea.top + 5 };
+  };
+}
+
 function renderWeightChart() {
   const ctx = document.getElementById('weightChart').getContext('2d');
   if (weightChart) weightChart.destroy();
@@ -1632,7 +1813,13 @@ function renderWeightChart() {
       { label: 'Goal', data: goalPoints.map(p=>({x:p.x,y:p.y})), borderColor:'#d29922', borderWidth:1.5, borderDash:[8,4], pointRadius:0, tension:0, fill:false }
     ]},
     options: { responsive:true, maintainAspectRatio:false, interaction:{intersect:false,mode:'index'},
-      plugins:{legend:{labels:{color:textColor,font:{size:11,family:'DM Sans'},boxWidth:12}}},
+      plugins:{legend:{labels:{color:textColor,font:{size:11,family:'DM Sans'},boxWidth:12}},
+        tooltip:{position:'topRight',caretSize:0,
+          callbacks:{title:function(items){return items[0].label;},},
+          yAlign:'top',xAlign:'right',
+          // Pin tooltip to top-right corner
+        },
+      },
       scales:{ x:{type:'category',ticks:{color:textColor,font:{size:10},maxTicksLimit:8},grid:{color:gridColor}},
         y:{min:CONFIG.goalWeight-3,max:CONFIG.startWeight+3,ticks:{color:textColor,font:{size:10}},grid:{color:gridColor}} }
     }
@@ -1792,7 +1979,7 @@ function displayAiResult(r) {
   h += '<div class="ai-result-total"><span>Total (+5% adjustment)</span><span class="total-cal">'+r.total_calories+' cal</span></div>';
   h += '<div class="ai-result-macro"><span>🥩 Protein: '+r.total_protein+'g</span><span>🍞 Carbs: '+r.total_carbs+'g</span><span>🧈 Fat: '+r.total_fat+'g</span></div>';
   if (r.note) h += '<div class="ai-result-note">'+r.note+'</div>';
-  h += '<div class="ai-result-actions"><button class="btn-primary" onclick="logAiFood()" style="font-size:0.85rem;padding:10px">✅ Log This</button><button class="btn-secondary" onclick="saveToMyFoods()" style="margin:0;font-size:0.85rem;padding:10px">⭐ Save to My Foods</button></div>';
+  h += '<div class="ai-result-actions"><button class="btn-primary" onclick="logAiFood()" style="font-size:0.85rem;padding:10px">✅ Log This</button><button class="btn-secondary" onclick="saveToMyFoods()" style="margin:0;font-size:0.85rem;padding:10px">⭐ Save Items</button>' + (r.items.length > 1 ? '<button class="btn-secondary" onclick="saveAsMeal()" style="margin:0;font-size:0.85rem;padding:10px">🍱 Save as Meal</button>' : '') + '</div>';
   d.innerHTML = h; d.classList.add('visible');
 }
 
@@ -1817,6 +2004,30 @@ function saveToMyFoods() {
     }
   });
   saveData(); renderMyFoods(); showToast('⭐ Saved to My Foods!');
+}
+
+
+// ===== MY MEALS =====
+function saveAsMeal() {
+  if (!lastAiResult || !lastAiResult.items || lastAiResult.items.length < 2) {
+    showToast('⚠️ Estimate a multi-item meal first'); return;
+  }
+  const name = prompt('Name this meal (e.g., "Breakfast Cheerios Bowl"):');
+  if (!name || !name.trim()) return;
+  const meal = {
+    id: generateId(), name: name.trim(),
+    items: lastAiResult.items.map(i => ({name:i.name,calories:i.calories,protein:i.protein||0,carbs:i.carbs||0,fat:i.fat||0})),
+    calories: lastAiResult.total_calories,
+    protein: lastAiResult.total_protein || 0,
+    carbs: lastAiResult.total_carbs || 0,
+    fat: lastAiResult.total_fat || 0,
+    count: 0
+  };
+  if (data.myMeals.find(m => m.name.toLowerCase() === meal.name.toLowerCase())) {
+    showToast('⚠️ Meal name already exists'); return;
+  }
+  data.myMeals.push(meal);
+  saveData(); renderMyFoods(); showToast('🍱 Saved as meal: ' + name);
 }
 
 // ===== MY FOODS RECALL =====
@@ -1846,10 +2057,19 @@ function toggleMyFood(id) {
 function addSelectedMyFoods() {
   if (!selectedMyFoods.size) return;
   const entry = getTodayCalorieEntry(); let count = 0;
+  const timeStr = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
   selectedMyFoods.forEach(id => {
+    // Check meals first
+    const meal = data.myMeals && data.myMeals.find(m => m.id === id);
+    if (meal) {
+      // Log the meal as a single item with combined macros
+      entry.log.push({id:generateId(),name:'🍱 '+meal.name,calories:meal.calories,protein:meal.protein||0,carbs:meal.carbs||0,fat:meal.fat||0,time:timeStr});
+      meal.count = (meal.count||0) + 1; count++;
+      return;
+    }
     const food = data.myFoods.find(f => f.id === id);
     if (food) {
-      entry.log.push({id:generateId(),name:food.name,calories:food.calories,protein:food.protein,carbs:food.carbs,fat:food.fat,time:new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})});
+      entry.log.push({id:generateId(),name:food.name,calories:food.calories,protein:food.protein,carbs:food.carbs,fat:food.fat,time:timeStr});
       food.count = (food.count||0) + 1; count++;
     }
   });
@@ -1860,8 +2080,10 @@ function addSelectedMyFoods() {
 }
 
 function removeMyFood(id) {
-  if (confirm('Remove from My Foods?')) {
-    data.myFoods = data.myFoods.filter(f => f.id !== id); saveData(); renderMyFoods(); showToast('🗑 Removed');
+  if (confirm('Remove from saved items?')) {
+    data.myFoods = data.myFoods.filter(f => f.id !== id);
+    if (data.myMeals) data.myMeals = data.myMeals.filter(m => m.id !== id);
+    saveData(); renderMyFoods(); showToast('🗑 Removed');
   }
 }
 
@@ -1911,6 +2133,16 @@ function refreshDashboard() {
   const progBar = document.getElementById('progressBar');
   if (progBar) progBar.style.width = Math.min(pct, 100) + '%';
   document.getElementById('lbsLost').textContent = Math.max(0, lost).toFixed(1);
+  // Goal pace indicator
+  const daysIn = daysBetween(data.startDate, today());
+  const expectedLoss = ((CONFIG.startWeight - CONFIG.goalWeight) / (CONFIG.goalWeeks * 7)) * daysIn;
+  const paceEl = document.getElementById('goalPace');
+  if (paceEl) {
+    if (daysIn < 3) { paceEl.textContent = 'Just started — keep going!'; paceEl.style.color = 'var(--text-secondary)'; }
+    else if (lost >= expectedLoss * 0.9) { paceEl.textContent = '✅ On track — ' + lost.toFixed(1) + ' lost vs ' + expectedLoss.toFixed(1) + ' expected'; paceEl.style.color = 'var(--accent-green)'; }
+    else if (lost >= expectedLoss * 0.7) { paceEl.textContent = '⚠️ Slightly behind — ' + lost.toFixed(1) + ' lost vs ' + expectedLoss.toFixed(1) + ' expected'; paceEl.style.color = 'var(--accent-orange)'; }
+    else { paceEl.textContent = '🔴 Behind pace — ' + lost.toFixed(1) + ' lost vs ' + expectedLoss.toFixed(1) + ' expected'; paceEl.style.color = 'var(--accent-red)'; }
+  }
   const weeksIn = Math.floor(daysBetween(data.startDate, today()) / 7) + 1;
   document.getElementById('goalSubtitle').innerHTML = 'Week <strong>'+Math.min(weeksIn,CONFIG.goalWeeks)+'</strong> of '+CONFIG.goalWeeks+' — <strong>'+Math.max(0,toGo).toFixed(1)+'</strong> lbs to go';
   document.getElementById('dashWeight').textContent = w.toFixed(1);
@@ -1918,10 +2150,16 @@ function refreshDashboard() {
   document.getElementById('dashCalBudget').textContent = todayCal ? todayCal.target.toLocaleString() : calcTarget(w,'moderate').toLocaleString();
   const todayCheckin = data.checkins.find(c=>c.date===today());
   document.getElementById('dashStress').textContent = todayCheckin ? todayCheckin.stress+'/10' : '—';
+  const shabbatBadge = document.getElementById('dashShabbat');
+  if (shabbatBadge) {
+    const todayShabbat = todayCheckin && todayCheckin.shabbat;
+    shabbatBadge.style.display = todayShabbat ? 'block' : 'none';
+  }
   const todayW = data.workouts.filter(x=>x.date===today());
   document.getElementById('dashWorkout').textContent = todayW.length ? (todayW[todayW.length-1].type==='rest'?'Rest':todayW[todayW.length-1].rpe+'/10') : '—';
   const consumed = todayCal&&todayCal.log ? todayCal.log.reduce((s,f)=>s+f.calories,0) : 0;
   document.getElementById('dashConsumed').textContent = consumed ? consumed.toLocaleString() : '—';
+  if (document.getElementById('dashConsumedBar')) document.getElementById('dashConsumedBar').textContent = consumed.toLocaleString();
   const burned = getTodayBurned();
   document.getElementById('dashBurned').textContent = burned ? burned.toLocaleString() : '—';
   const budget = todayCal ? todayCal.target : calcTarget(w, 'moderate');
@@ -2081,8 +2319,8 @@ async function exportData() {
   URL.revokeObjectURL(a.href);
   closeDataModal(); showToast('📤 Exported!');
 }
-function importData(ev) { const f=ev.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=e=>{try{const im=JSON.parse(e.target.result); if(im.weights&&im.workouts){data={myFoods:[],myWorkouts:[],...im};saveData();closeDataModal(); showToast('📥 Imported!'); refreshDashboard();}}catch{showToast('⚠️ Error');}}; r.readAsText(f); ev.target.value=''; }
-function resetAllData() { if(confirm('⚠️ Delete ALL data?')&&confirm('Really? Cannot be undone.')){ data={weights:[],workouts:[],checkins:[],calories:[],myFoods:[],myWorkouts:[],startDate:today()}; saveData(); closeDataModal(); showToast('🗑 Reset'); refreshDashboard(); } }
+function importData(ev) { const f=ev.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=e=>{try{const im=JSON.parse(e.target.result); if(im.weights&&im.workouts){data={myFoods:[],myWorkouts:[],myMeals:[],...im};saveData();closeDataModal(); showToast('📥 Imported!'); refreshDashboard();}}catch{showToast('⚠️ Error');}}; r.readAsText(f); ev.target.value=''; }
+function resetAllData() { if(confirm('⚠️ Delete ALL data?')&&confirm('Really? Cannot be undone.')){ data={weights:[],workouts:[],checkins:[],calories:[],myFoods:[],myWorkouts:[],myMeals:[],startDate:today()}; saveData(); closeDataModal(); showToast('🗑 Reset'); refreshDashboard(); } }
 
 // ===== INIT =====
 function init() {
@@ -2090,7 +2328,13 @@ function init() {
   const w=getCurrentWeight(); document.getElementById('calTarget').textContent=calcTarget(w,'moderate').toLocaleString();
   document.getElementById('calDetail').textContent='TDEE '+calcTDEE(w,'moderate').toLocaleString()+' − '+CONFIG.deficitPerDay+' deficit (with 5% adjustments)';
   const tc=data.checkins.find(c=>c.date===today());
-  if(tc){document.getElementById('stressSlider').value=tc.stress;updateSlider('stress');setSleep(tc.sleep);document.getElementById('energySlider').value=tc.energy;updateSlider('energy');if(tc.note)document.getElementById('checkinNote').value=tc.note;}
+  if(tc){document.getElementById('stressSlider').value=tc.stress;updateSlider('stress');setSleep(tc.sleep);document.getElementById('energySlider').value=tc.energy;updateSlider('energy');if(tc.note)document.getElementById('checkinNote').value=tc.note;
+    if(tc.shabbat && document.getElementById('shabbatToggle')) document.getElementById('shabbatToggle').checked=true;
+  } else {
+    // Auto-suggest Shabbat on Friday
+    const dow = new Date().getDay();
+    if (dow === 5 && document.getElementById('shabbatToggle')) document.getElementById('shabbatToggle').checked = true;
+  }
   const tw=data.weights.find(w=>w.date===today());
   if(tw){document.getElementById('checkinWeight').placeholder=tw.weight+' (logged)';} else {document.getElementById('checkinWeight').placeholder=getCurrentWeight().toFixed(1);}
   const tca=data.calories.find(c=>c.date===today());
