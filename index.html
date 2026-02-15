@@ -1109,11 +1109,17 @@ input[type="range"]::-webkit-slider-thumb {
   <div class="card">
     <div class="card-title">🚶 Quick Log: Walking</div>
     <div style="display:flex;gap:8px;align-items:center">
-      <input type="number" class="form-input" id="walkingSteps" placeholder="e.g., 5000" oninput="updateWalkingEstimate()" style="flex:1">
-      <span style="font-size:0.92rem;color:var(--text-secondary)">steps</span>
-      <button class="btn-primary" onclick="logWalking()" style="white-space:nowrap;margin:0">🚶 Log</button>
+      <input type="number" class="form-input" id="walkingSteps" placeholder="Steps" oninput="updateWalkingEstimate()" style="flex:1;min-width:0;font-size:1rem">
+      <select id="walkingRPE" onchange="updateWalkingEstimate()" style="padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--bg-input);color:var(--text-primary);font-size:0.9rem;font-family:'DM Sans',sans-serif">
+        <option value="1">RPE 1</option>
+        <option value="2" selected>RPE 2</option>
+        <option value="3">RPE 3</option>
+        <option value="4">RPE 4</option>
+        <option value="5">RPE 5</option>
+      </select>
+      <button class="btn-primary" onclick="logWalking()" style="width:auto;flex:0 0 auto;margin:0;padding:8px 24px;font-size:0.85rem">Log</button>
     </div>
-    <div style="font-size:0.88rem;margin-top:6px;font-weight:500" id="walkingEstimate"></div>
+    <div style="font-size:0.88rem;margin-top:4px;font-weight:500" id="walkingEstimate"></div>
   </div>
 
   <div class="card">
@@ -1706,18 +1712,21 @@ function healthLabel(category) {
 
 
 // ===== WALKING CALCULATOR =====
-function calcWalkingCals(steps) {
+function calcWalkingCals(steps, rpe) {
   const w = getCurrentWeight();
-  // ~0.04 cal per step per pound, with conservative adjustment
-  return Math.round(steps * w * 0.00035 * CONFIG.expendAdjust);
+  // Base: ~0.04 cal per step per pound
+  // RPE multiplier: RPE 1=0.8x (stroll), RPE 2=1.0x (normal), RPE 3=1.2x (brisk), RPE 4=1.4x (power walk), RPE 5=1.6x (race walk/hills)
+  const rpeMultiplier = 0.6 + ((rpe || 2) * 0.2);
+  return Math.round(steps * w * 0.00035 * rpeMultiplier * CONFIG.expendAdjust);
 }
 
 function updateWalkingEstimate() {
   const steps = parseInt(document.getElementById('walkingSteps').value) || 0;
   const est = document.getElementById('walkingEstimate');
   if (steps > 0) {
-    const cals = calcWalkingCals(steps);
-    est.textContent = '~' + cals + ' cal · RPE auto-set to ' + (steps > 7500 ? '3' : '2');
+    const rpe = parseInt(document.getElementById('walkingRPE').value) || 2;
+    const cals = calcWalkingCals(steps, rpe);
+    est.textContent = '~' + cals + ' cal burned';
     est.style.color = 'var(--accent-green)';
   } else { est.textContent = ''; }
 }
@@ -1725,8 +1734,8 @@ function updateWalkingEstimate() {
 function logWalking() {
   const steps = parseInt(document.getElementById('walkingSteps').value);
   if (!steps || steps < 100) { showToast('⚠️ Enter your steps'); return; }
-  const cals = calcWalkingCals(steps);
-  const rpe = steps > 10000 ? 4 : steps > 7500 ? 3 : 2;
+  const rpe = parseInt(document.getElementById('walkingRPE').value) || 2;
+  const cals = calcWalkingCals(steps, rpe);
   data.workouts.push({
     date: today(), type: 'cardio', rpe,
     duration: Math.round(steps / 100),
