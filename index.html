@@ -2079,14 +2079,50 @@ let selectedMyFoods = new Set();
 
 function renderMyFoods() {
   const c = document.getElementById('myFoodsList'); selectedMyFoods.clear();
-  if (!data.myFoods.length) {
-    c.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:0.85rem">No saved foods yet. Use AI estimator and tap "Save to My Foods" to build your list.</div>';
+  const hasFoods = data.myFoods && data.myFoods.length;
+  const hasMeals = data.myMeals && data.myMeals.length;
+  if (!hasFoods && !hasMeals) {
+    c.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:0.92rem">No saved foods yet. Use AI estimator and tap "Save to My Foods" to build your list.</div>';
     document.getElementById('addSelectedBtn').style.display = 'none'; return;
   }
-  const sorted = [...data.myFoods].sort((a,b) => (b.count||0) - (a.count||0));
-  c.innerHTML = sorted.map(f =>
-    '<div class="my-food-item" id="mf-'+f.id+'" onclick="toggleMyFood(\''+f.id+'\')"><div class="my-food-check" id="mfc-'+f.id+'">✓</div><div class="my-food-info"><div class="my-food-name">'+f.name+'</div><div class="my-food-cal">'+f.calories+' cal · P:'+f.protein+'g C:'+f.carbs+'g F:'+f.fat+'g'+(f.count?' · used '+f.count+'×':'')+'</div></div><button class="my-food-remove" onclick="event.stopPropagation();removeMyFood(\''+f.id+'\')" title="Remove">×</button></div>'
-  ).join('');
+  let h = '';
+  // Render My Meals first
+  if (hasMeals) {
+    h += '<div style="font-size:0.85rem;font-weight:700;color:var(--accent-blue);text-transform:uppercase;letter-spacing:1px;padding:8px 0 4px;margin-top:4px">🍱 My Meals</div>';
+    const sortedMeals = [...data.myMeals].sort((a,b) => a.name.localeCompare(b.name));
+    h += sortedMeals.map(m => {
+      const health = getFoodHealth(m);
+      const itemNames = (m.items||[]).map(i => i.name).join(', ');
+      return '<div class="my-food-item" id="mf-'+m.id+'" onclick="toggleMyFood(\''+m.id+'\')">' +
+        '<div class="my-food-check" id="mfc-'+m.id+'">✓</div>' +
+        '<div class="my-food-info"><div class="my-food-name">' + healthIcon(health) + ' ' + m.name + '</div>' +
+        '<div class="my-food-cal">' + m.calories + ' cal · P:' + (m.protein||0) + 'g C:' + (m.carbs||0) + 'g F:' + (m.fat||0) + 'g' + (m.count ? ' · used ' + m.count + '×' : '') + '</div>' +
+        (itemNames ? '<div style="font-size:0.82rem;color:var(--text-muted);font-style:italic">' + itemNames + '</div>' : '') +
+        '</div>' +
+        '<button class="my-food-remove" onclick="event.stopPropagation();removeMyFood(\''+m.id+'\')" title="Remove">×</button></div>';
+    }).join('');
+  }
+  // Group foods by health category, alphabetical within each
+  if (hasFoods) {
+    const categories = [
+      {key:'green', label:'🟢 Healthy Choices', color:'var(--accent-green)'},
+      {key:'yellow', label:'🟡 Moderate', color:'var(--accent-orange)'},
+      {key:'red', label:'🔴 Consume Less', color:'var(--accent-red)'}
+    ];
+    for (const cat of categories) {
+      const foods = data.myFoods.filter(f => getFoodHealth(f) === cat.key).sort((a,b) => a.name.localeCompare(b.name));
+      if (!foods.length) continue;
+      h += '<div style="font-size:0.85rem;font-weight:700;color:'+cat.color+';text-transform:uppercase;letter-spacing:1px;padding:8px 0 4px;margin-top:4px">' + cat.label + '</div>';
+      h += foods.map(f =>
+        '<div class="my-food-item" id="mf-'+f.id+'" onclick="toggleMyFood(\''+f.id+'\')">' +
+        '<div class="my-food-check" id="mfc-'+f.id+'">✓</div>' +
+        '<div class="my-food-info"><div class="my-food-name">' + healthIcon(cat.key) + ' ' + f.name + '</div>' +
+        '<div class="my-food-cal">' + f.calories + ' cal · P:' + (f.protein||0) + 'g C:' + (f.carbs||0) + 'g F:' + (f.fat||0) + 'g' + (f.count ? ' · used ' + f.count + '×' : '') + '</div></div>' +
+        '<button class="my-food-remove" onclick="event.stopPropagation();removeMyFood(\''+f.id+'\')" title="Remove">×</button></div>'
+      ).join('');
+    }
+  }
+  c.innerHTML = h;
   document.getElementById('addSelectedBtn').style.display = 'none';
 }
 
