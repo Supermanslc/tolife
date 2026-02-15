@@ -1984,12 +1984,19 @@ function estimateLocally(desc) {
 function displayAiResult(r) {
   const d = document.getElementById('aiResult');
   let h = '';
-  r.items.forEach(i => { h += '<div class="ai-result-item"><span class="food-name">'+i.name+'</span><span class="food-cal">'+i.calories+' cal</span></div>'; });
+  r.items.forEach(i => {
+    const health = getFoodHealth(i);
+    const hi = healthIcon(health);
+    const hlabel = health === 'green' ? 'Healthy' : health === 'red' ? 'Limit this' : '';
+    h += '<div class="ai-result-item"><span class="food-name">' + hi + ' ' + i.name + (hlabel ? ' <span style="font-size:0.8rem;font-weight:400;color:' + (health==='green'?'var(--accent-green)':'var(--accent-red)') + '">' + hlabel + '</span>' : '') + '</span><span class="food-cal">' + i.calories + ' cal</span></div>';
+  });
   h += '<div class="ai-result-total"><span>Total (+5% adjustment)</span><span class="total-cal">'+r.total_calories+' cal</span></div>';
   h += '<div class="ai-result-macro"><span>🥩 Protein: '+r.total_protein+'g</span><span>🍞 Carbs: '+r.total_carbs+'g</span><span>🧈 Fat: '+r.total_fat+'g</span></div>';
   if (r.note) h += '<div class="ai-result-note">'+r.note+'</div>';
   h += '<div class="ai-result-actions"><button class="btn-primary" onclick="logAiFood()" style="font-size:0.85rem;padding:10px">✅ Log This</button><button class="btn-secondary" onclick="saveToMyFoods()" style="margin:0;font-size:0.85rem;padding:10px">⭐ Save Items</button>' + (r.items.length > 1 ? '<button class="btn-secondary" onclick="saveAsMeal()" style="margin:0;font-size:0.85rem;padding:10px">🍱 Save as Meal</button>' : '') + '</div>';
   d.innerHTML = h; d.classList.add('visible');
+  // Clear input for next entry
+  document.getElementById('foodInput').value = '';
 }
 
 function logAiFood() {
