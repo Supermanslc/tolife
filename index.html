@@ -1173,7 +1173,7 @@ input[type="range"]::-webkit-slider-thumb {
   </div>
 
   <div class="card">
-    <div class="card-title">📋 Recent Workouts</div>
+    <div class="card-title">📋 Last 7 Days — Workouts</div>
     <div id="workoutHistory"></div>
   </div>
 </div>
@@ -1199,6 +1199,7 @@ input[type="range"]::-webkit-slider-thumb {
   </div>
   <div class="card">
     <div class="card-title">📉 Weight Trend</div>
+    <div id="weightChartSummary" style="margin-bottom:10px;padding:10px;background:var(--bg-input);border-radius:8px"></div>
     <div class="chart-container"><canvas id="weightChart"></canvas></div>
   </div>
   <div class="card">
@@ -1536,8 +1537,11 @@ function saveWorkout() {
 
 function renderWorkoutHistory() {
   const c = document.getElementById('workoutHistory');
-  const recent = [...data.workouts].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 15);
-  if (!recent.length) { c.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:0.85rem">No workouts yet.</div>'; return; }
+  const sevenAgo = new Date(); sevenAgo.setDate(sevenAgo.getDate() - 7);
+  const sevenAgoStr = sevenAgo.getFullYear()+'-'+String(sevenAgo.getMonth()+1).padStart(2,'0')+'-'+String(sevenAgo.getDate()).padStart(2,'0');
+  const recent = [...data.workouts].filter(w => w.date >= sevenAgoStr).sort((a, b) => b.date.localeCompare(a.date));
+  if (!recent.length) { c.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:0.92rem">No workouts in the last 7 days.</div>'; return; }
+  c.style.maxHeight = '300px'; c.style.overflowY = 'auto';
   const badges = { weights:'badge-weights', cardio:'badge-cardio', stretch:'badge-stretch', rest:'badge-rest' };
   const labels = { weights:'🏋️ Weights', cardio:'🚴 Cardio', stretch:'🧘 Stretch', rest:'🛋 Rest' };
   c.innerHTML = recent.map((w, i) => {
@@ -1801,6 +1805,21 @@ function renderWeightChart() {
   const ctx = document.getElementById('weightChart').getContext('2d');
   if (weightChart) weightChart.destroy();
   const sorted = [...data.weights].sort((a, b) => a.date.localeCompare(b.date));
+  // Update current day summary above chart
+  const summaryEl = document.getElementById('weightChartSummary');
+  if (summaryEl && sorted.length) {
+    const latest = sorted[sorted.length - 1];
+    const daysIn = daysBetween(data.startDate, today());
+    const goalPerDay = (CONFIG.startWeight - CONFIG.goalWeight) / (CONFIG.goalWeeks * 7);
+    const expectedWeight = Math.round((CONFIG.startWeight - (goalPerDay * daysIn)) * 10) / 10;
+    const avg7 = sorted.length >= 2 ? sorted.slice(-7).reduce((s,w) => s + w.weight, 0) / Math.min(sorted.length, 7) : latest.weight;
+    summaryEl.innerHTML =
+      '<div style="display:flex;justify-content:space-around;text-align:center">' +
+      '<div><div style="font-family:JetBrains Mono;font-size:1.2rem;font-weight:700;color:var(--accent-green)">' + latest.weight + '</div><div style="font-size:0.82rem;color:var(--text-muted)">Today</div></div>' +
+      '<div><div style="font-family:JetBrains Mono;font-size:1.2rem;font-weight:700;color:var(--accent-blue)">' + avg7.toFixed(1) + '</div><div style="font-size:0.82rem;color:var(--text-muted)">7-Day Avg</div></div>' +
+      '<div><div style="font-family:JetBrains Mono;font-size:1.2rem;font-weight:700;color:var(--accent-orange)">' + expectedWeight + '</div><div style="font-size:0.82rem;color:var(--text-muted)">Goal Today</div></div>' +
+      '</div>';
+  }
   const isLight = document.documentElement.hasAttribute('data-theme');
   const gridColor = isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)';
   const textColor = isLight ? '#57606a' : '#8b949e';
@@ -1823,11 +1842,7 @@ function renderWeightChart() {
     ]},
     options: { responsive:true, maintainAspectRatio:false, interaction:{intersect:false,mode:'index'},
       plugins:{legend:{labels:{color:textColor,font:{size:11,family:'DM Sans'},boxWidth:12}},
-        tooltip:{position:'topRight',caretSize:0,
-          callbacks:{title:function(items){return items[0].label;},},
-          yAlign:'top',xAlign:'right',
-          // Pin tooltip to top-right corner
-        },
+        tooltip:{enabled:false},
       },
       scales:{ x:{type:'category',ticks:{color:textColor,font:{size:10},maxTicksLimit:8},grid:{color:gridColor}},
         y:{min:CONFIG.goalWeight-3,max:CONFIG.startWeight+3,ticks:{color:textColor,font:{size:10}},grid:{color:gridColor}} }
@@ -2262,6 +2277,8 @@ function refreshDashboard() {
     balBar.style.width = Math.min(balPct, 100) + '%';
     balBar.classList.toggle('over', consumed > totalBudget);
     balLabel.textContent = consumed > totalBudget ? (consumed - totalBudget).toLocaleString() + ' cal over budget' : remaining.toLocaleString() + ' cal remaining';
+    balLabel.style.color = consumed > totalBudget ? 'var(--accent-red)' : 'var(--accent-green)';
+    balLabel.style.fontWeight = '700';
   }
   // Update dashboard macros
   const todayLog = todayCal && todayCal.log ? todayCal.log : [];
