@@ -935,7 +935,7 @@ input[type="range"]::-webkit-slider-thumb {
     </div>
   </div>
   <div class="header-actions">
-    <span class="version-tag">v5.2</span>
+    <span class="version-tag">v5.3</span>
     <button class="data-btn" onclick="showDataModal()">💾</button>
     <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">☀️</button>
   </div>
@@ -1250,7 +1250,7 @@ input[type="range"]::-webkit-slider-thumb {
   <button class="nav-item" onclick="showPage('Insights')"><span class="nav-icon">🧠</span><span>Insights</span></button>
 </nav>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script><script>
-// ===== ToLife! v5.2 — App Logic =====
+// ===== ToLife! v5.3 — App Logic =====
 // L'Chaim — to health, to strength
 
 const CONFIG = {
@@ -2001,7 +2001,7 @@ function logAiFood() {
   entry.consumed = entry.log.reduce((s,f)=>s+f.calories,0);
   saveTodayCalorieEntry(entry);
   document.getElementById('foodInput').value = '';
-  document.getElementById('aiResult').classList.remove('visible'); lastAiResult = null;
+  document.getElementById('aiResult').classList.remove('visible');
   renderFoodLog(); updateCalorieSummary(); showToast('🍽 Food logged!');
 }
 
@@ -2018,13 +2018,46 @@ function saveToMyFoods() {
 
 // ===== MY MEALS =====
 function saveAsMeal() {
-  if (!lastAiResult || !lastAiResult.items || lastAiResult.items.length < 2) {
-    showToast('⚠️ Estimate a multi-item meal first'); return;
+  if (!lastAiResult || !lastAiResult.items) {
+    showToast('⚠️ Estimate a meal first'); return;
   }
-  const name = prompt('Name this meal (e.g., "Breakfast Cheerios Bowl"):');
-  if (!name || !name.trim()) return;
+  // Show inline naming UI instead of prompt()
+  const container = document.getElementById('aiResult');
+  // Auto-suggest name from first item or food input
+  const inputText = document.getElementById('foodInput').value.trim();
+  const suggestion = inputText || lastAiResult.items.map(i => i.name.split('(')[0].trim()).slice(0,2).join(' + ');
+  
+  let nameBox = document.getElementById('mealNameBox');
+  if (nameBox) { nameBox.remove(); }
+  
+  const div = document.createElement('div');
+  div.id = 'mealNameBox';
+  div.style.cssText = 'margin-top:10px;padding:10px;border:1px solid var(--accent-blue);border-radius:8px;background:var(--bg-input)';
+  div.innerHTML = '<div style="font-size:0.88rem;font-weight:600;color:var(--accent-blue);margin-bottom:6px">🍱 Name this meal:</div>' +
+    '<div style="display:flex;gap:6px;align-items:center">' +
+    '<input type="text" id="mealNameInput" class="form-input" value="' + suggestion.replace(/"/g,'&quot;') + '" style="flex:1;font-size:0.95rem">' +
+    '<button onclick="document.getElementById(\'mealNameInput\').value=\'\'" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--text-muted)">✕</button>' +
+    '</div>' +
+    '<button class="btn-primary" onclick="confirmSaveMeal()" style="margin-top:8px;width:auto;padding:8px 20px;font-size:0.85rem">Save Meal</button>';
+  container.appendChild(div);
+  container.classList.add('visible');
+  document.getElementById('mealNameInput').focus();
+  document.getElementById('mealNameInput').select();
+}
+
+function confirmSaveMeal() {
+  const nameEl = document.getElementById('mealNameInput');
+  if (!nameEl) return;
+  const name = nameEl.value.trim();
+  if (!name) { showToast('⚠️ Enter a meal name'); return; }
+  if (!lastAiResult || !lastAiResult.items) { showToast('⚠️ No meal data'); return; }
+  
+  if (data.myMeals.find(m => m.name.toLowerCase() === name.toLowerCase())) {
+    showToast('⚠️ Meal name already exists'); return;
+  }
+  
   const meal = {
-    id: generateId(), name: name.trim(),
+    id: generateId(), name: name,
     items: lastAiResult.items.map(i => ({name:i.name,calories:i.calories,protein:i.protein||0,carbs:i.carbs||0,fat:i.fat||0})),
     calories: lastAiResult.total_calories,
     protein: lastAiResult.total_protein || 0,
@@ -2032,11 +2065,13 @@ function saveAsMeal() {
     fat: lastAiResult.total_fat || 0,
     count: 0
   };
-  if (data.myMeals.find(m => m.name.toLowerCase() === meal.name.toLowerCase())) {
-    showToast('⚠️ Meal name already exists'); return;
-  }
   data.myMeals.push(meal);
-  saveData(); renderMyFoods(); showToast('🍱 Saved as meal: ' + name);
+  saveData(); renderMyFoods();
+  
+  const box = document.getElementById('mealNameBox');
+  if (box) box.remove();
+  lastAiResult = null;
+  showToast('🍱 Saved: ' + name);
 }
 
 // ===== MY FOODS RECALL =====
