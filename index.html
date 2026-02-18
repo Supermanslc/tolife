@@ -1311,6 +1311,25 @@ let data = {
 
 const STORAGE_KEY = 'tolife_data';
 
+
+function sanityCheckGoal() {
+  if (!data.goal) {
+    const sw = data.weights && data.weights.length ? Math.max(...data.weights.map(w=>w.weight)) : 179;
+    data.goal = { startWeight: sw, goalWeight: 158, goalWeeks: 8, startDate: data.startDate, mode: 'loss' };
+  }
+  if (!data.goalHistory) data.goalHistory = [];
+  if (!data.profile) data.profile = { height: 68, age: 50 };
+  if (data.weights && data.weights.length) {
+    const highest = Math.max(...data.weights.map(w => w.weight));
+    const earliest = [...data.weights].sort((a,b) => a.date.localeCompare(b.date))[0];
+    // startWeight should be the highest of: current startWeight, earliest weight, highest weight
+    if (data.goal.startWeight < highest) data.goal.startWeight = highest;
+    // startDate should be at or before first weight entry
+    if (!data.startDate || data.startDate > earliest.date) data.startDate = earliest.date;
+    if (!data.goal.startDate) data.goal.startDate = data.startDate;
+  }
+  saveData();
+}
 function loadData() {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved) { const p = JSON.parse(saved); data = { ...data, ...p }; if (!data.myFoods) data.myFoods = []; if (!data.myWorkouts) data.myWorkouts = []; if (!data.myMeals) data.myMeals = [];
@@ -1320,15 +1339,7 @@ function loadData() {
     }
     if (!data.profile) data.profile = { height: 68, age: 50 }; }
   if (!data.startDate) { data.startDate = today(); saveData(); }
-  // Sanity check: startWeight should be >= highest recorded weight or at least >= current weight
-  if (data.goal && data.weights.length) {
-    const earliest = [...data.weights].sort((a,b)=>a.date.localeCompare(b.date))[0].weight;
-    const highest = Math.max(...data.weights.map(w=>w.weight));
-    if (data.goal.startWeight < earliest) data.goal.startWeight = earliest;
-    // Ensure startDate is not after first weight entry
-    const firstDate = [...data.weights].sort((a,b)=>a.date.localeCompare(b.date))[0].date;
-    if (!data.startDate || data.startDate > firstDate) data.startDate = firstDate;
-  }
+  sanityCheckGoal();
 }
 
 function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
@@ -2658,13 +2669,8 @@ async function exportData() {
   closeDataModal(); showToast('📤 Exported!');
 }
 function importData(ev) { const f=ev.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=e=>{try{const im=JSON.parse(e.target.result); if(im.weights&&im.workouts){data={myFoods:[],myWorkouts:[],myMeals:[],...im};
-          if(!data.goalHistory) data.goalHistory=[];
-          if(!data.profile) data.profile={height:68,age:50};
-          if(!data.goal) {
-            const sw = data.weights&&data.weights.length ? [...data.weights].sort((a,b)=>a.date.localeCompare(b.date))[0].weight : 179;
-            data.goal={startWeight:sw,goalWeight:158,goalWeeks:8,startDate:data.startDate,mode:'loss'};
-          }
-          data=data;saveData();closeDataModal(); showToast('📥 Imported!'); refreshDashboard();}}catch{showToast('⚠️ Error');}}; r.readAsText(f); ev.target.value=''; }
+          sanityCheckGoal();
+          closeDataModal(); showToast('📥 Imported!'); refreshDashboard();}}catch{showToast('⚠️ Error');}}; r.readAsText(f); ev.target.value=''; }
 function resetAllData() { if(confirm('⚠️ Delete ALL data?')&&confirm('Really? Cannot be undone.')){ data={weights:[],workouts:[],checkins:[],calories:[],myFoods:[],myWorkouts:[],myMeals:[],goal:null,goalHistory:[],profile:null,startDate:today()}; saveData(); closeDataModal(); showToast('🗑 Reset'); refreshDashboard(); } }
 
 // ===== INIT =====

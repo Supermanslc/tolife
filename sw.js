@@ -1,13 +1,9 @@
-// ToLife! Service Worker v1.0
-const CACHE_NAME = 'tolife-v1.0';
+// ToLife! Service Worker v6.1
+const CACHE_NAME = 'tolife-v6.1';
 const ASSETS = [
   './',
   './index.html',
-  './app.js',
-  './styles.css',
   './manifest.json',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
   'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js'
 ];
@@ -29,15 +25,30 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
+  // Never cache API calls
+  if (event.request.url.includes('anthropic.com') ||
+      event.request.url.includes('workers.dev')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
+  // Network-first for HTML (always get latest version)
+  if (event.request.mode === 'navigate' || event.request.url.endsWith('.html')) {
+    event.respondWith(
+      fetch(event.request).then(response => {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+        return response;
+      }).catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // Cache-first for static assets (fonts, Chart.js)
   event.respondWith(
     caches.match(event.request).then(cached => {
       if (cached) return cached;
       return fetch(event.request).then(response => {
-        // Don't cache API calls
-        if (event.request.url.includes('anthropic.com') ||
-            event.request.url.includes('workers.dev')) {
-          return response;
-        }
         const clone = response.clone();
         caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         return response;
