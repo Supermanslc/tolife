@@ -2489,9 +2489,9 @@ function refreshDashboard() {
   const paceEl = document.getElementById('goalPace');
   if (paceEl) {
     if (daysIn < 3) { paceEl.textContent = 'Just started — keep going!'; paceEl.style.color = 'var(--text-secondary)'; }
-    else if (lost >= expectedLoss * 0.9) { paceEl.textContent = '✅ On track — ' + lost.toFixed(1) + ' lost vs ' + expectedLoss.toFixed(1) + ' expected'; paceEl.style.color = 'var(--accent-green)'; }
-    else if (lost >= expectedLoss * 0.7) { paceEl.textContent = '⚠️ Slightly behind — ' + lost.toFixed(1) + ' lost vs ' + expectedLoss.toFixed(1) + ' expected'; paceEl.style.color = 'var(--accent-orange)'; }
-    else { paceEl.textContent = '🔴 Behind pace — ' + lost.toFixed(1) + ' lost vs ' + expectedLoss.toFixed(1) + ' expected'; paceEl.style.color = 'var(--accent-red)'; }
+    else if (totalLost >= expectedLoss * 0.9) { paceEl.textContent = '✅ On track — ' + totalLost.toFixed(1) + ' lost vs ' + expectedLoss.toFixed(1) + ' expected'; paceEl.style.color = 'var(--accent-green)'; }
+    else if (totalLost >= expectedLoss * 0.7) { paceEl.textContent = '⚠️ Slightly behind — ' + totalLost.toFixed(1) + ' lost vs ' + expectedLoss.toFixed(1) + ' expected'; paceEl.style.color = 'var(--accent-orange)'; }
+    else { paceEl.textContent = '🔴 Behind pace — ' + totalLost.toFixed(1) + ' lost vs ' + expectedLoss.toFixed(1) + ' expected'; paceEl.style.color = 'var(--accent-red)'; }
   }
   const weeksIn = Math.floor(daysBetween(data.startDate, today()) / 7) + 1;
   const refNote = data.referenceWeight && data.referenceWeight !== G('startWeight') ? ' (from ' + refW + ' lbs)' : '';
