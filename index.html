@@ -932,6 +932,7 @@ input[type="range"]::-webkit-slider-thumb {
     <div>
       <h1>🥂 ToLife!</h1>
       <div class="lchaim">L'Chaim — to health, to strength</div>
+      <div style="font-size:0.55rem;color:var(--text-muted);opacity:0.6;white-space:nowrap">Created by Claude AI, from an idea by Shawn Cohen MD</div>
     </div>
   </div>
   <div class="header-actions">
@@ -1306,7 +1307,7 @@ function getGoal() {
 
 let data = {
   weights: [], workouts: [], checkins: [], calories: [], myFoods: [], myWorkouts: [], myMeals: [],
-  goal: null, goalHistory: [], profile: null, startDate: null
+  goal: null, goalHistory: [], profile: null, referenceWeight: null, startDate: null
 };
 
 const STORAGE_KEY = 'tolife_data';
@@ -1327,6 +1328,10 @@ function sanityCheckGoal() {
     // startDate should be at or before first weight entry
     if (!data.startDate || data.startDate > earliest.date) data.startDate = earliest.date;
     if (!data.goal.startDate) data.goal.startDate = data.startDate;
+  }
+  // Reference weight: the very first starting point for total journey tracking
+  if (!data.referenceWeight && data.weights && data.weights.length) {
+    data.referenceWeight = Math.max(...data.weights.map(w => w.weight));
   }
   saveData();
 }
@@ -1906,6 +1911,13 @@ function renderGoalEditor() {
       '<label class="form-label">Pick a date</label>' +
       '<input type="date" class="form-input" id="goalCustomDate">' +
     '</div>' +
+    '<div style="margin-bottom:10px"><label class="form-label">📌 Reference Start Weight (for total journey tracking)</label>' +
+    '<div style="display:flex;gap:8px;align-items:center">' +
+      '<input type="number" step="0.1" class="form-input" id="refWeightInput" value="' + (data.referenceWeight || g.startWeight) + '" style="flex:1;text-align:center">' +
+      '<span style="font-size:0.85rem;color:var(--text-muted)">lbs</span>' +
+    '</div>' +
+    '<div style="font-size:0.82rem;color:var(--text-muted);margin-top:4px">Total lost on Home page is measured from this weight. Change goals without losing your overall progress.</div>' +
+    '</div>' +
     '<button class="btn-primary" onclick="saveGoal()" style="width:auto;padding:10px 24px;font-size:0.85rem">Update Goal</button>';
 
   // Set current timeframe selection
@@ -1950,6 +1962,10 @@ function saveGoal() {
   }
   if (!data.goalHistory) data.goalHistory = [];
   
+  // Save reference weight
+  const refW = parseFloat(document.getElementById('refWeightInput').value);
+  if (refW && refW >= 100 && refW <= 400) data.referenceWeight = refW;
+
   // Save profile
   const feet = parseInt(document.getElementById('profileFeet').value) || 5;
   const inches = parseInt(document.getElementById('profileInches').value) || 8;
@@ -2457,11 +2473,16 @@ function updateCalorieSummary() {
 
 // ===== DASHBOARD =====
 function refreshDashboard() {
-  const w = getCurrentWeight(); const lost = G('startWeight') - w; const toGo = w - G('goalWeight');
-  const pct = Math.max(0, Math.min(100, (lost / (G('startWeight') - G('goalWeight'))) * 100));
+  const w = getCurrentWeight();
+  const refW = data.referenceWeight || G('startWeight');
+  const totalLost = refW - w;
+  const goalLost = G('startWeight') - w;
+  const toGo = w - G('goalWeight');
+  const totalGoal = refW - G('goalWeight');
+  const pct = Math.max(0, Math.min(100, (totalLost / totalGoal) * 100));
   const progBar = document.getElementById('progressBar');
   if (progBar) progBar.style.width = Math.min(pct, 100) + '%';
-  document.getElementById('lbsLost').textContent = Math.max(0, lost).toFixed(1);
+  document.getElementById('lbsLost').textContent = Math.max(0, totalLost).toFixed(1);
   // Goal pace indicator
   const daysIn = daysBetween(data.startDate, today());
   const expectedLoss = ((G('startWeight') - G('goalWeight')) / (G('goalWeeks') * 7)) * daysIn;
@@ -2473,7 +2494,8 @@ function refreshDashboard() {
     else { paceEl.textContent = '🔴 Behind pace — ' + lost.toFixed(1) + ' lost vs ' + expectedLoss.toFixed(1) + ' expected'; paceEl.style.color = 'var(--accent-red)'; }
   }
   const weeksIn = Math.floor(daysBetween(data.startDate, today()) / 7) + 1;
-  document.getElementById('goalSubtitle').innerHTML = 'Week <strong>'+Math.min(weeksIn,G('goalWeeks'))+'</strong> of '+G('goalWeeks')+' — <strong>'+Math.max(0,toGo).toFixed(1)+'</strong> lbs to go';
+  const refNote = data.referenceWeight && data.referenceWeight !== G('startWeight') ? ' (from ' + refW + ' lbs)' : '';
+  document.getElementById('goalSubtitle').innerHTML = 'Week <strong>'+Math.min(weeksIn,G('goalWeeks'))+'</strong> of '+G('goalWeeks')+' — <strong>'+Math.max(0,toGo).toFixed(1)+'</strong> lbs to go' + refNote;
   document.getElementById('dashWeight').textContent = w.toFixed(1);
   const todayCal = data.calories.find(c=>c.date===today());
   document.getElementById('dashCalBudget').textContent = todayCal ? todayCal.target.toLocaleString() : calcTarget(w,'moderate').toLocaleString();
@@ -2671,7 +2693,7 @@ async function exportData() {
 function importData(ev) { const f=ev.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=e=>{try{const im=JSON.parse(e.target.result); if(im.weights&&im.workouts){data={myFoods:[],myWorkouts:[],myMeals:[],...im};
           sanityCheckGoal();
           closeDataModal(); showToast('📥 Imported!'); refreshDashboard();}}catch{showToast('⚠️ Error');}}; r.readAsText(f); ev.target.value=''; }
-function resetAllData() { if(confirm('⚠️ Delete ALL data?')&&confirm('Really? Cannot be undone.')){ data={weights:[],workouts:[],checkins:[],calories:[],myFoods:[],myWorkouts:[],myMeals:[],goal:null,goalHistory:[],profile:null,startDate:today()}; saveData(); closeDataModal(); showToast('🗑 Reset'); refreshDashboard(); } }
+function resetAllData() { if(confirm('⚠️ Delete ALL data?')&&confirm('Really? Cannot be undone.')){ data={weights:[],workouts:[],checkins:[],calories:[],myFoods:[],myWorkouts:[],myMeals:[],goal:null,goalHistory:[],profile:null,referenceWeight:null,startDate:today()}; saveData(); closeDataModal(); showToast('🗑 Reset'); refreshDashboard(); } }
 
 // ===== INIT =====
 function init() {
