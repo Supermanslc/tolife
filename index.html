@@ -1134,6 +1134,16 @@ input[type="range"]::-webkit-slider-thumb {
         <button class="quick-btn" onclick="setWorkoutType('rest')">🛋 Rest Day</button>
       </div>
     </div>
+    <div class="form-group" id="cardioSubtypeWrap" style="display:none">
+      <label class="form-label">Activity Type</label>
+      <div class="quick-select" id="cardioSubtypeSelect">
+        <button class="quick-btn" data-sub="bike" onclick="setCardioSubtype('bike')">🚲 Bike</button>
+        <button class="quick-btn" data-sub="run" onclick="setCardioSubtype('run')">🏃 Run</button>
+        <button class="quick-btn" data-sub="golf" onclick="setCardioSubtype('golf')">⛳ Golf</button>
+        <button class="quick-btn" data-sub="swim" onclick="setCardioSubtype('swim')">🏊 Swim</button>
+        <button class="quick-btn" data-sub="" onclick="setCardioSubtype('')">🏷 Other</button>
+      </div>
+    </div>
     <div class="slider-group" id="rpeSection">
       <div class="slider-header"><span class="form-label" style="margin:0">💪 Effort (RPE)</span><span class="slider-value" id="rpeVal" style="color:var(--accent-purple)">5</span></div>
       <input type="range" id="rpeSlider" min="1" max="10" value="5" oninput="updateSlider('rpe')">
@@ -1305,21 +1315,36 @@ function calcTarget(w, level) { return Math.round(calcTDEE(w, level) - CONFIG.de
 function getCurrentWeight() { if (!data.weights.length) return CONFIG.startWeight; return [...data.weights].sort((a, b) => b.date.localeCompare(a.date))[0].weight; }
 
 // ===== CALORIES BURNED ESTIMATION =====
-function estimateBurn(type, duration, rpe, weight) {
-  // MET-based estimation with RPE adjustment
-  // MET values: rest=1, stretch/yoga=2.5, weights=3-6 (by RPE), cardio=5-10 (by RPE)
+function estimateBurn(type, duration, rpe, weight, subtype) {
+  // MET-based estimation with activity-specific values
   const kg = weight * 0.453592;
   let met;
   if (type === 'rest') return 0;
-  if (type === 'stretch') met = 2.5;
-  else if (type === 'weights') met = 2.5 + (rpe / 10) * 4; // 2.5-6.5
-  else if (type === 'cardio') met = 4 + (rpe / 10) * 7; // 4-11
-  else met = 3;
+  
+  // Sub-type specific METs (more accurate than generic cardio)
+  if (subtype === 'golf') {
+    met = 3.5 + (rpe / 10) * 5; // 3.5-8.5 (golf: walking course, carrying clubs)
+  } else if (subtype === 'bike') {
+    // Reduced from generic cardio: stationary/casual cycling
+    met = 3.5 + (rpe / 10) * 5; // 3.5-8.5 (was 4-11, ~15% reduction at high RPE)
+  } else if (subtype === 'swim') {
+    met = 4 + (rpe / 10) * 6; // 4-10
+  } else if (subtype === 'run') {
+    met = 6 + (rpe / 10) * 5; // 6-11
+  } else if (type === 'stretch') {
+    met = 2.5;
+  } else if (type === 'weights') {
+    met = 2.5 + (rpe / 10) * 4; // 2.5-6.5
+  } else if (type === 'cardio') {
+    // Generic cardio (walking etc) — slightly reduced
+    met = 3.5 + (rpe / 10) * 6; // 3.5-9.5
+  } else {
+    met = 3;
+  }
 
-  // If no duration specified, estimate: weights=45min, cardio=30min, stretch=20min
   const mins = duration || (type === 'weights' ? 45 : type === 'cardio' ? 30 : 20);
   const cals = Math.round((met * kg * mins) / 60);
-  // Apply conservative -5% adjustment (we tend to overestimate burn)
+  // Apply conservative -5% adjustment
   return Math.round(cals * CONFIG.expendAdjust);
 }
 
@@ -1490,7 +1515,25 @@ function saveCheckin() {
 // ===== WORKOUT =====
 let currentWorkoutType = '', currentCardioFocus = '';
 
+let currentCardioSubtype = '';
+
+function setCardioSubtype(sub) {
+  currentCardioSubtype = sub;
+  document.querySelectorAll('#cardioSubtypeSelect .quick-btn').forEach(b => b.classList.remove('active'));
+  if (sub) {
+    document.querySelectorAll('#cardioSubtypeSelect .quick-btn').forEach(b => {
+      if (b.getAttribute('data-sub') === sub) b.classList.add('active');
+    });
+  }
+  // Update burn estimate
+  updateBurnEstimate();
+}
+
 function setWorkoutType(type) {
+  // Show/hide cardio subtype selector
+  const subtypeWrap = document.getElementById('cardioSubtypeWrap');
+  if (subtypeWrap) subtypeWrap.style.display = type === 'cardio' ? 'block' : 'none';
+  if (type !== 'cardio') currentCardioSubtype = '';
   currentWorkoutType = type;
   document.querySelectorAll('#workoutTypeSelect .quick-btn').forEach(b => b.classList.remove('active'));
   event.currentTarget.classList.add('active');
@@ -1507,7 +1550,7 @@ function updateBurnEstimate() {
   const rpe = parseInt(document.getElementById('rpeSlider').value) || 5;
   const duration = parseInt(document.getElementById('workoutDuration').value) || 0;
   const w = getCurrentWeight();
-  const est = estimateBurn(currentWorkoutType, duration, rpe, w);
+  const est = estimateBurn(currentWorkoutType, duration, rpe, w, currentCardioSubtype);
   document.getElementById('burnEstimate').textContent = 'AI estimate: ~' + est + ' cal (override below if your machine shows different)';
 }
 
@@ -1523,7 +1566,7 @@ function saveWorkout() {
   const duration = parseInt(document.getElementById('workoutDuration').value) || 0;
   const manualBurn = parseInt(document.getElementById('workoutCalsBurned').value) || 0;
   const w = getCurrentWeight();
-  const calsBurned = manualBurn > 0 ? manualBurn : estimateBurn(currentWorkoutType, duration, rpe, w);
+  const calsBurned = manualBurn > 0 ? manualBurn : estimateBurn(currentWorkoutType, duration, rpe, w, currentCardioSubtype);
 
   data.workouts.push({
     date: today(), type: currentWorkoutType, rpe, duration,
@@ -1722,10 +1765,10 @@ function healthLabel(category) {
 // ===== WALKING CALCULATOR =====
 function calcWalkingCals(steps, rpe) {
   const w = getCurrentWeight();
-  // Base: ~0.04 cal per step per pound
-  // RPE multiplier: RPE 1=0.8x (stroll), RPE 2=1.0x (normal), RPE 3=1.2x (brisk), RPE 4=1.4x (power walk), RPE 5=1.6x (race walk/hills)
+  // Refined: ~0.03 cal per step per pound at base (reduced from 0.035)
+  // RPE multiplier: RPE 1=0.8x (stroll), RPE 2=1.0x, RPE 3=1.25x, RPE 4=1.5x, RPE 5=1.75x
   const rpeMultiplier = 0.6 + ((rpe || 2) * 0.2);
-  return Math.round(steps * w * 0.00035 * rpeMultiplier * CONFIG.expendAdjust);
+  return Math.round(steps * w * 0.00033 * rpeMultiplier * CONFIG.expendAdjust);
 }
 
 function updateWalkingEstimate() {
