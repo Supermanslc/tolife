@@ -935,7 +935,7 @@ input[type="range"]::-webkit-slider-thumb {
     </div>
   </div>
   <div class="header-actions">
-    <span class="version-tag">v6.0</span>
+    <span class="version-tag">v6.1</span>
     <button class="data-btn" onclick="showDataModal()">💾</button>
     <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">☀️</button>
   </div>
@@ -1194,21 +1194,6 @@ input[type="range"]::-webkit-slider-thumb {
 
 <!-- ===== INSIGHTS ===== -->
 <div class="page" id="pageInsights">
-  <div class="card" id="goalEditor"></div>
-  <div class="card">
-    <div class="card-title">📊 Metabolic Profile</div>
-    <div class="stat-grid">
-      <div class="stat-card"><div class="stat-value stat-teal" id="bmrValue">1,770</div><div class="stat-label">BMR (cal/day)</div></div>
-      <div class="stat-card"><div class="stat-value stat-blue" id="tdeeValue">2,420</div><div class="stat-label">TDEE (moderate)</div></div>
-    </div>
-    <div style="font-size:0.88rem;color:var(--text-secondary);line-height:1.8;padding:8px 0">
-      <strong>Daily Calorie Targets</strong> (with 5% conservative adjustments):<br>
-      🛋 Rest: <span id="calRest" style="font-family:'JetBrains Mono';font-weight:700">1,250</span> cal &nbsp;|&nbsp;
-      🚶 Light: <span id="calLight" style="font-family:'JetBrains Mono';font-weight:700">1,480</span> cal<br>
-      💪 Moderate: <span id="calModerate" style="font-family:'JetBrains Mono';font-weight:700">1,670</span> cal &nbsp;|&nbsp;
-      🔥 Intense: <span id="calIntense" style="font-family:'JetBrains Mono';font-weight:700">1,860</span> cal
-    </div>
-  </div>
   <div class="card">
     <div class="card-title">📉 Weight Trend</div>
     <div id="weightChartSummary" style="margin-bottom:10px;padding:10px;background:var(--bg-input);border-radius:8px"></div>
@@ -1233,6 +1218,21 @@ input[type="range"]::-webkit-slider-thumb {
   </div>
   <div class="card"><div class="card-title">🔗 Stress–Behavior Patterns</div><div id="correlationInsights"></div><div id="noInsightsMsg" style="font-size:0.92rem;color:var(--text-muted);padding:8px 0">Log at least 7 days to see patterns.</div></div>
   <div class="card"><div class="card-title">💡 Adaptive Suggestions</div><div id="adaptiveSuggestions"></div></div>
+  <div class="card">
+    <div class="card-title">📊 Metabolic Profile</div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-value stat-teal" id="bmrValue">1,770</div><div class="stat-label">BMR (cal/day)</div></div>
+      <div class="stat-card"><div class="stat-value stat-blue" id="tdeeValue">2,420</div><div class="stat-label">TDEE (moderate)</div></div>
+    </div>
+    <div style="font-size:0.88rem;color:var(--text-secondary);line-height:1.8;padding:8px 0">
+      <strong>Daily Calorie Targets</strong> (with 5% conservative adjustments):<br>
+      🛋 Rest: <span id="calRest" style="font-family:'JetBrains Mono';font-weight:700">1,250</span> cal &nbsp;|&nbsp;
+      🚶 Light: <span id="calLight" style="font-family:'JetBrains Mono';font-weight:700">1,480</span> cal<br>
+      💪 Moderate: <span id="calModerate" style="font-family:'JetBrains Mono';font-weight:700">1,670</span> cal &nbsp;|&nbsp;
+      🔥 Intense: <span id="calIntense" style="font-family:'JetBrains Mono';font-weight:700">1,860</span> cal
+    </div>
+  </div>
+  <div class="card" id="goalEditor"></div>
   <div class="card">
     <div class="card-title">🔥 Streak</div>
     <div class="stat-grid">
@@ -1263,7 +1263,7 @@ input[type="range"]::-webkit-slider-thumb {
   <button class="nav-item" onclick="showPage('Insights')"><span class="nav-icon">🧠</span><span>Insights</span></button>
 </nav>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script><script>
-// ===== ToLife! v6.0 — App Logic =====
+// ===== ToLife! v6.1 — App Logic =====
 // L'Chaim — to health, to strength
 
 const CONFIG = {
@@ -1291,7 +1291,10 @@ function getCurrentWeightSafe() {
   return [...data.weights].sort((a, b) => b.date.localeCompare(a.date))[0].weight;
 }
 function getGoal() {
-  if (!data.goal) data.goal = { startWeight: 179, goalWeight: 158, goalWeeks: 8, startDate: data.startDate, mode: 'loss' };
+  if (!data.goal) {
+      const sw = data.weights&&data.weights.length ? [...data.weights].sort((a,b)=>a.date.localeCompare(b.date))[0].weight : 179;
+      data.goal = { startWeight: sw, goalWeight: 158, goalWeeks: 8, startDate: data.startDate, mode: 'loss' };
+    }
   const g = data.goal;
   const cur = getCurrentWeightSafe();
   const gap = cur - g.goalWeight;
@@ -1311,9 +1314,21 @@ const STORAGE_KEY = 'tolife_data';
 function loadData() {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved) { const p = JSON.parse(saved); data = { ...data, ...p }; if (!data.myFoods) data.myFoods = []; if (!data.myWorkouts) data.myWorkouts = []; if (!data.myMeals) data.myMeals = [];
-    if (!data.goal) data.goal = { startWeight: 179, goalWeight: 158, goalWeeks: 8, startDate: data.startDate, mode: 'loss' };
+    if (!data.goal) {
+      const sw = data.weights&&data.weights.length ? [...data.weights].sort((a,b)=>a.date.localeCompare(b.date))[0].weight : 179;
+      data.goal = { startWeight: sw, goalWeight: 158, goalWeeks: 8, startDate: data.startDate, mode: 'loss' };
+    }
     if (!data.profile) data.profile = { height: 68, age: 50 }; }
   if (!data.startDate) { data.startDate = today(); saveData(); }
+  // Sanity check: startWeight should be >= highest recorded weight or at least >= current weight
+  if (data.goal && data.weights.length) {
+    const earliest = [...data.weights].sort((a,b)=>a.date.localeCompare(b.date))[0].weight;
+    const highest = Math.max(...data.weights.map(w=>w.weight));
+    if (data.goal.startWeight < earliest) data.goal.startWeight = earliest;
+    // Ensure startDate is not after first weight entry
+    const firstDate = [...data.weights].sort((a,b)=>a.date.localeCompare(b.date))[0].date;
+    if (!data.startDate || data.startDate > firstDate) data.startDate = firstDate;
+  }
 }
 
 function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
@@ -1963,6 +1978,7 @@ function saveWeight() {
 
 function renderWeightHistory() {
   const c = document.getElementById('weightHistory');
+  c.style.maxHeight = '250px'; c.style.overflowY = 'auto';
   const recent = [...data.weights].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 20);
   if (!recent.length) { c.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:0.85rem">No weight entries yet.</div>'; return; }
   c.innerHTML = recent.map((e, i) => {
@@ -2000,7 +2016,11 @@ if (typeof Chart !== 'undefined') {
 function renderWeightChart() {
   const ctx = document.getElementById('weightChart').getContext('2d');
   if (weightChart) weightChart.destroy();
-  const sorted = [...data.weights].sort((a, b) => a.date.localeCompare(b.date));
+  const allSorted = [...data.weights].sort((a, b) => a.date.localeCompare(b.date));
+  // Limit chart to last 90 days for performance
+  const ninetyAgo = new Date(); ninetyAgo.setDate(ninetyAgo.getDate() - 90);
+  const ninetyStr = ninetyAgo.getFullYear()+'-'+String(ninetyAgo.getMonth()+1).padStart(2,'0')+'-'+String(ninetyAgo.getDate()).padStart(2,'0');
+  const sorted = allSorted.filter(w => w.date >= ninetyStr);
   // Update current day summary above chart
   const summaryEl = document.getElementById('weightChartSummary');
   if (summaryEl && sorted.length) {
@@ -2041,7 +2061,7 @@ function renderWeightChart() {
         tooltip:{enabled:false},
       },
       scales:{ x:{type:'category',ticks:{color:textColor,font:{size:10},maxTicksLimit:8},grid:{color:gridColor}},
-        y:{min:G('goalWeight')-3,max:G('startWeight')+3,ticks:{color:textColor,font:{size:10}},grid:{color:gridColor}} }
+        y:{min:Math.min(G('goalWeight'), ...(sorted.length ? sorted.map(e=>e.weight) : [G('goalWeight')]))-3,max:Math.max(G('startWeight'), ...(sorted.length ? sorted.map(e=>e.weight) : [G('startWeight')]))+3,ticks:{color:textColor,font:{size:10}},grid:{color:gridColor}} }
     }
   });
 }
@@ -2638,9 +2658,12 @@ async function exportData() {
   closeDataModal(); showToast('📤 Exported!');
 }
 function importData(ev) { const f=ev.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=e=>{try{const im=JSON.parse(e.target.result); if(im.weights&&im.workouts){data={myFoods:[],myWorkouts:[],myMeals:[],...im};
-          if(!data.goal) data.goal={startWeight:data.weights&&data.weights.length?data.weights[0].weight:179,goalWeight:158,goalWeeks:8,startDate:data.startDate,mode:'loss'};
           if(!data.goalHistory) data.goalHistory=[];
           if(!data.profile) data.profile={height:68,age:50};
+          if(!data.goal) {
+            const sw = data.weights&&data.weights.length ? [...data.weights].sort((a,b)=>a.date.localeCompare(b.date))[0].weight : 179;
+            data.goal={startWeight:sw,goalWeight:158,goalWeeks:8,startDate:data.startDate,mode:'loss'};
+          }
           data=data;saveData();closeDataModal(); showToast('📥 Imported!'); refreshDashboard();}}catch{showToast('⚠️ Error');}}; r.readAsText(f); ev.target.value=''; }
 function resetAllData() { if(confirm('⚠️ Delete ALL data?')&&confirm('Really? Cannot be undone.')){ data={weights:[],workouts:[],checkins:[],calories:[],myFoods:[],myWorkouts:[],myMeals:[],goal:null,goalHistory:[],profile:null,startDate:today()}; saveData(); closeDataModal(); showToast('🗑 Reset'); refreshDashboard(); } }
 
