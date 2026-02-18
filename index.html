@@ -935,7 +935,7 @@ input[type="range"]::-webkit-slider-thumb {
     </div>
   </div>
   <div class="header-actions">
-    <span class="version-tag">v5.3</span>
+    <span class="version-tag">v6.0</span>
     <button class="data-btn" onclick="showDataModal()">💾</button>
     <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">☀️</button>
   </div>
@@ -962,6 +962,7 @@ input[type="range"]::-webkit-slider-thumb {
     </div>
     <div style="font-size:0.9rem;margin-top:6px;font-weight:500" id="goalPace"></div>
   </div>
+  <div id="dashModeBadge" style="text-align:center;padding:4px;font-size:0.85rem;font-weight:600"></div>
   <div id="dashShabbat" style="display:none;text-align:center;padding:8px;margin-bottom:8px;background:var(--bg-input);border-radius:12px;font-size:0.92rem;color:var(--accent-blue)">🕯️ Shabbat Mode — Adjusted targets for today, weekdays will compensate</div>
   <div class="stat-grid">
     <div class="stat-card"><div class="stat-value stat-green" id="dashWeight">179.0</div><div class="stat-label">Current lbs</div></div>
@@ -1183,6 +1184,7 @@ input[type="range"]::-webkit-slider-thumb {
 
 <!-- ===== INSIGHTS ===== -->
 <div class="page" id="pageInsights">
+  <div class="card" id="goalEditor"></div>
   <div class="card">
     <div class="card-title">📊 Metabolic Profile</div>
     <div class="stat-grid">
@@ -1251,7 +1253,7 @@ input[type="range"]::-webkit-slider-thumb {
   <button class="nav-item" onclick="showPage('Insights')"><span class="nav-icon">🧠</span><span>Insights</span></button>
 </nav>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script><script>
-// ===== ToLife! v5.3 — App Logic =====
+// ===== ToLife! v6.0 — App Logic =====
 // L'Chaim — to health, to strength
 
 const CONFIG = {
@@ -1269,7 +1271,9 @@ const STORAGE_KEY = 'tolife_data';
 
 function loadData() {
   const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved) { const p = JSON.parse(saved); data = { ...data, ...p }; if (!data.myFoods) data.myFoods = []; if (!data.myWorkouts) data.myWorkouts = []; if (!data.myMeals) data.myMeals = []; }
+  if (saved) { const p = JSON.parse(saved); data = { ...data, ...p }; if (!data.myFoods) data.myFoods = []; if (!data.myWorkouts) data.myWorkouts = []; if (!data.myMeals) data.myMeals = [];
+    if (!data.goal) data.goal = { startWeight: 179, goalWeight: 158, goalWeeks: 8, startDate: data.startDate, mode: 'loss' };
+    if (!data.profile) data.profile = { height: 68, age: 50 }; }
   if (!data.startDate) { data.startDate = today(); saveData(); }
 }
 
@@ -1357,7 +1361,7 @@ function showPage(name) {
   document.getElementById('page' + name).classList.add('active');
   event.currentTarget.classList.add('active');
   if (name === 'Dashboard') refreshDashboard();
-  if (name === 'Insights') { refreshInsights(); updateMetabolicDisplay(); renderWeightChart(); renderWeightHistory(); renderWeightStats(); }
+  if (name === 'Insights') { refreshInsights(); renderGoalEditor(); updateMetabolicDisplay(); renderWeightChart(); renderWeightHistory(); renderWeightStats(); }
   if (name === 'Workout') { renderWorkoutHistory(); renderMyWorkouts(); }
   if (name === 'Nutrition') { renderMyFoods(); renderFoodLog(); updateCalorieSummary(); }
 }
@@ -1754,6 +1758,126 @@ function logWalking() {
   renderWorkoutHistory(); renderMyWorkouts(); refreshDashboard();
 }
 
+
+// ===== GOAL EDITOR =====
+function renderGoalEditor() {
+  const c = document.getElementById('goalEditor');
+  if (!c) return;
+  const g = getGoal();
+  const p = data.profile || { height: 68, age: 50 };
+  const current = getCurrentWeight();
+  const modeLabels = { loss: '🔥 Weight Loss', maintain: '⚖️ Maintenance', gain: '💪 Weight Gain' };
+  const modeColors = { loss: 'var(--accent-orange)', maintain: 'var(--accent-green)', gain: 'var(--accent-blue)' };
+  const deficitLabels = { loss: '750 cal/day deficit → ~1.5 lbs/week', maintain: '200 cal/day deficit → steady weight', gain: '300 cal/day surplus → gradual gain' };
+
+  c.innerHTML =
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' +
+      '<span class="card-title" style="margin:0">🎯 Your Goal</span>' +
+      '<span style="font-size:0.88rem;font-weight:700;color:' + modeColors[g.mode] + '">' + modeLabels[g.mode] + '</span>' +
+    '</div>' +
+    '<div style="font-size:0.85rem;color:var(--text-muted);margin-bottom:12px">' + deficitLabels[g.mode] + '</div>' +
+    '<div class="stat-grid" style="margin-bottom:12px">' +
+      '<div class="stat-card"><div class="stat-value stat-green">' + current.toFixed(1) + '</div><div class="stat-label">Current lbs</div></div>' +
+      '<div class="stat-card"><div class="stat-value stat-orange">' + g.goalWeight + '</div><div class="stat-label">Goal lbs</div></div>' +
+    '</div>' +
+    '<div style="display:flex;gap:8px;margin-bottom:10px">' +
+      '<div style="flex:1"><label class="form-label">Height</label>' +
+        '<div style="display:flex;gap:4px">' +
+          '<input type="number" class="form-input" id="profileFeet" value="' + Math.floor(p.height / 12) + '" min="4" max="7" style="width:50%;text-align:center">' +
+          '<span style="align-self:center;color:var(--text-muted);font-size:0.9rem">ft</span>' +
+          '<input type="number" class="form-input" id="profileInches" value="' + (p.height % 12) + '" min="0" max="11" style="width:50%;text-align:center">' +
+          '<span style="align-self:center;color:var(--text-muted);font-size:0.9rem">in</span>' +
+        '</div></div>' +
+      '<div style="flex:0.5"><label class="form-label">Age</label>' +
+        '<input type="number" class="form-input" id="profileAge" value="' + p.age + '" min="16" max="100" style="text-align:center"></div>' +
+    '</div>' +
+    '<div style="display:flex;gap:8px;margin-bottom:10px">' +
+      '<div style="flex:1"><label class="form-label">Goal Weight (lbs)</label>' +
+        '<input type="number" step="0.5" class="form-input" id="goalWeightInput" value="' + g.goalWeight + '"></div>' +
+      '<div style="flex:1"><label class="form-label">Target Date</label>' +
+        '<select class="form-input" id="goalTimeframe" onchange="goalTimeframeChanged()" style="padding:10px">' +
+          '<option value="4">4 weeks</option>' +
+          '<option value="8">8 weeks</option>' +
+          '<option value="12">12 weeks</option>' +
+          '<option value="26">6 months</option>' +
+          '<option value="eoy">End of year</option>' +
+          '<option value="custom">Custom date</option>' +
+        '</select></div>' +
+    '</div>' +
+    '<div id="customDateWrap" style="display:none;margin-bottom:10px">' +
+      '<label class="form-label">Pick a date</label>' +
+      '<input type="date" class="form-input" id="goalCustomDate">' +
+    '</div>' +
+    '<button class="btn-primary" onclick="saveGoal()" style="width:auto;padding:10px 24px;font-size:0.85rem">Update Goal</button>';
+
+  // Set current timeframe selection
+  const sel = document.getElementById('goalTimeframe');
+  if (sel) {
+    const weeks = g.goalWeeks;
+    if ([4,8,12,26].includes(weeks)) sel.value = String(weeks);
+    else sel.value = 'custom';
+  }
+}
+
+function goalTimeframeChanged() {
+  const v = document.getElementById('goalTimeframe').value;
+  document.getElementById('customDateWrap').style.display = v === 'custom' || v === 'eoy' ? 'none' : 'none';
+  if (v === 'custom') document.getElementById('customDateWrap').style.display = 'block';
+}
+
+function saveGoal() {
+  const goalW = parseFloat(document.getElementById('goalWeightInput').value);
+  if (!goalW || goalW < 90 || goalW > 400) { showToast('⚠️ Enter a valid goal weight'); return; }
+  
+  const timeVal = document.getElementById('goalTimeframe').value;
+  let weeks;
+  if (timeVal === 'eoy') {
+    const now = new Date();
+    const eoy = new Date(now.getFullYear(), 11, 31);
+    weeks = Math.max(1, Math.round((eoy - now) / (7 * 24 * 60 * 60 * 1000)));
+  } else if (timeVal === 'custom') {
+    const customDate = document.getElementById('goalCustomDate').value;
+    if (!customDate) { showToast('⚠️ Pick a target date'); return; }
+    const diff = new Date(customDate) - new Date();
+    weeks = Math.max(1, Math.round(diff / (7 * 24 * 60 * 60 * 1000)));
+  } else {
+    weeks = parseInt(timeVal);
+  }
+  
+  const current = getCurrentWeight();
+  
+  // Save previous goal to history
+  if (data.goal && data.goalHistory) {
+    data.goalHistory.push({ ...data.goal, endedAt: today(), endWeight: current });
+  }
+  if (!data.goalHistory) data.goalHistory = [];
+  
+  // Save profile
+  const feet = parseInt(document.getElementById('profileFeet').value) || 5;
+  const inches = parseInt(document.getElementById('profileInches').value) || 8;
+  const age = parseInt(document.getElementById('profileAge').value) || 50;
+  data.profile = { height: feet * 12 + inches, age };
+
+  data.goal = {
+    startWeight: current,
+    goalWeight: goalW,
+    goalWeeks: weeks,
+    startDate: today(),
+    mode: current - goalW > 5 ? 'loss' : current - goalW > 0 ? 'maintain' : 'gain'
+  };
+  data.startDate = today();
+  
+  saveData();
+  renderGoalEditor();
+  updateMetabolicDisplay();
+  renderWeightChart();
+  refreshDashboard();
+  
+  const mode = data.goal.mode;
+  const modeLabel = mode === 'loss' ? 'Weight Loss' : mode === 'maintain' ? 'Maintenance' : 'Weight Gain';
+  showToast('🎯 Goal set: ' + goalW + ' lbs in ' + weeks + ' weeks (' + modeLabel + ')');
+}
+
 // ===== WEIGHT =====
 function saveWeight() {
   const w = parseFloat(document.getElementById('weightInput').value);
@@ -1762,7 +1886,7 @@ function saveWeight() {
   data.weights.push({ date: today(), weight: w }); saveData();
   document.getElementById('weightInput').value = '';
   showToast('⚖️ Weight: ' + w + ' lbs');
-  updateMetabolicDisplay(); renderWeightHistory(); renderWeightStats(); renderWeightChart(); refreshDashboard();
+  updateMetabolicDisplay(); renderWeightHistory(); renderWeightStats(); renderWeightChart(); refreshDashboard(); checkGoalReached();
 }
 
 function renderWeightHistory() {
@@ -2252,6 +2376,15 @@ function refreshDashboard() {
   document.getElementById('dashCalBudget').textContent = todayCal ? todayCal.target.toLocaleString() : calcTarget(w,'moderate').toLocaleString();
   const todayCheckin = data.checkins.find(c=>c.date===today());
   document.getElementById('dashStress').textContent = todayCheckin ? todayCheckin.stress+'/10' : '—';
+  // Goal mode badge
+  const modeBadge = document.getElementById('dashModeBadge');
+  if (modeBadge) {
+    const g = getGoal();
+    const modeLabels = { loss: '🔥 Loss Mode · 750 cal/day deficit', maintain: '⚖️ Maintenance · 200 cal/day deficit', gain: '💪 Gain Mode · 300 cal/day surplus' };
+    const modeColors = { loss: 'var(--accent-orange)', maintain: 'var(--accent-green)', gain: 'var(--accent-blue)' };
+    modeBadge.textContent = modeLabels[g.mode];
+    modeBadge.style.color = modeColors[g.mode];
+  }
   const shabbatBadge = document.getElementById('dashShabbat');
   if (shabbatBadge) {
     const todayShabbat = todayCheckin && todayCheckin.shabbat;
@@ -2314,6 +2447,15 @@ function renderWeekGrid() {
          '<div class="week-day-icon">'+(icon || (ds===today()?'·':''))+'</div></div>';
   }
   g.innerHTML = h;
+}
+
+function checkGoalReached() {
+  const g = getGoal();
+  const p = data.profile || { height: 68, age: 50 };
+  const current = getCurrentWeight();
+  if (g.mode === 'loss' && current <= g.goalWeight) {
+    showToast('🎉🎉🎉 You reached your goal of ' + g.goalWeight + ' lbs! Time to set a new goal or switch to maintenance!');
+  }
 }
 
 function renderNudge(checkin) {
@@ -2423,7 +2565,7 @@ async function exportData() {
   URL.revokeObjectURL(a.href);
   closeDataModal(); showToast('📤 Exported!');
 }
-function importData(ev) { const f=ev.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=e=>{try{const im=JSON.parse(e.target.result); if(im.weights&&im.workouts){data={myFoods:[],myWorkouts:[],myMeals:[],...im};saveData();closeDataModal(); showToast('📥 Imported!'); refreshDashboard();}}catch{showToast('⚠️ Error');}}; r.readAsText(f); ev.target.value=''; }
+function importData(ev) { const f=ev.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=e=>{try{const im=JSON.parse(e.target.result); if(im.weights&&im.workouts){data={myFoods:[],myWorkouts:[],myMeals:[],goal:null,goalHistory:[],profile:null,...im};saveData();closeDataModal(); showToast('📥 Imported!'); refreshDashboard();}}catch{showToast('⚠️ Error');}}; r.readAsText(f); ev.target.value=''; }
 function resetAllData() { if(confirm('⚠️ Delete ALL data?')&&confirm('Really? Cannot be undone.')){ data={weights:[],workouts:[],checkins:[],calories:[],myFoods:[],myWorkouts:[],myMeals:[],startDate:today()}; saveData(); closeDataModal(); showToast('🗑 Reset'); refreshDashboard(); } }
 
 // ===== INIT =====
