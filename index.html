@@ -2690,9 +2690,32 @@ async function exportData() {
   URL.revokeObjectURL(a.href);
   closeDataModal(); showToast('📤 Exported!');
 }
-function importData(ev) { const f=ev.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=e=>{try{const im=JSON.parse(e.target.result); if(im.weights&&im.workouts){data={myFoods:[],myWorkouts:[],myMeals:[],...im};
-          sanityCheckGoal();
-          closeDataModal(); showToast('📥 Imported!'); refreshDashboard();}}catch{showToast('⚠️ Error');}}; r.readAsText(f); ev.target.value=''; }
+function importData(ev) {
+  const f = ev.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = e => {
+    try {
+      const im = JSON.parse(e.target.result);
+      if (!im.weights || !im.workouts) { showToast('⚠️ Invalid file: missing weights or workouts'); return; }
+      // Preserve any existing goal/profile if the import doesn't have them
+      const keepGoal = data.goal;
+      const keepProfile = data.profile;
+      const keepRef = data.referenceWeight;
+      data = { myFoods: [], myWorkouts: [], myMeals: [], ...im };
+      if (!data.goal && keepGoal) data.goal = keepGoal;
+      if (!data.profile && keepProfile) data.profile = keepProfile;
+      if (!data.referenceWeight && keepRef) data.referenceWeight = keepRef;
+      sanityCheckGoal();
+      closeDataModal();
+      showToast('📥 Imported! ' + data.weights.length + ' weigh-ins, ' + data.workouts.length + ' workouts');
+      refreshDashboard();
+    } catch (err) {
+      console.error('Import error:', err);
+      showToast('⚠️ Error: ' + err.message);
+    }
+  };
+  r.readAsText(f); ev.target.value = '';
+}
 function resetAllData() { if(confirm('⚠️ Delete ALL data?')&&confirm('Really? Cannot be undone.')){ data={weights:[],workouts:[],checkins:[],calories:[],myFoods:[],myWorkouts:[],myMeals:[],goal:null,goalHistory:[],profile:null,referenceWeight:null,startDate:today()}; saveData(); closeDataModal(); showToast('🗑 Reset'); refreshDashboard(); } }
 
 // ===== INIT =====
