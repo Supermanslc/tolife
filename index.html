@@ -1267,14 +1267,43 @@ input[type="range"]::-webkit-slider-thumb {
 // L'Chaim — to health, to strength
 
 const CONFIG = {
-  height: 68, startWeight: 179, goalWeight: 158, goalWeeks: 8,
-  deficitPerDay: 750, intakeAdjust: 1.05, expendAdjust: 0.95,
-  age: 55, gender: 'male',
-  workerUrl: 'https://tolife.shawn-cohenmd.workers.dev' // Set to your Cloudflare Worker URL for AI calorie estimation
+  intakeAdjust: 1.05, expendAdjust: 0.95,
+  workerUrl: 'https://tolife.shawn-cohenmd.workers.dev'
 };
 
+// Dynamic getters — read from data.goal and data.profile, fall back to defaults
+function G(prop) {
+  const defaults = { startWeight: 179, goalWeight: 158, goalWeeks: 8, deficitPerDay: 750, height: 68, age: 50 };
+  if (prop === 'height') return (data.profile && data.profile.height) || defaults.height;
+  if (prop === 'age') return (data.profile && data.profile.age) || defaults.age;
+  if (prop === 'deficitPerDay') {
+    const cur = getCurrentWeightSafe();
+    const gw = (data.goal && data.goal.goalWeight) || defaults.goalWeight;
+    const gap = cur - gw;
+    if (gap > 5) return 750;
+    if (gap > 0) return 200;
+    return -300;
+  }
+  return (data.goal && data.goal[prop]) || defaults[prop];
+}
+function getCurrentWeightSafe() {
+  if (!data.weights || !data.weights.length) return 179;
+  return [...data.weights].sort((a, b) => b.date.localeCompare(a.date))[0].weight;
+}
+function getGoal() {
+  if (!data.goal) data.goal = { startWeight: 179, goalWeight: 158, goalWeeks: 8, startDate: data.startDate, mode: 'loss' };
+  const g = data.goal;
+  const cur = getCurrentWeightSafe();
+  const gap = cur - g.goalWeight;
+  if (gap > 5) g.mode = 'loss';
+  else if (gap > 0) g.mode = 'maintain';
+  else g.mode = 'gain';
+  return g;
+}
+
 let data = {
-  weights: [], workouts: [], checkins: [], calories: [], myFoods: [], myWorkouts: [], myMeals: [], startDate: null
+  weights: [], workouts: [], checkins: [], calories: [], myFoods: [], myWorkouts: [], myMeals: [],
+  goal: null, goalHistory: [], profile: null, startDate: null
 };
 
 const STORAGE_KEY = 'tolife_data';
@@ -1309,10 +1338,10 @@ function showToast(msg) {
   }, 50);
 }
 
-function calcBMR(w) { const kg = w * 0.453592, cm = CONFIG.height * 2.54; return Math.round(10 * kg + 6.25 * cm - 5 * CONFIG.age + 5); }
+function calcBMR(w) { const kg = w * 0.453592, cm = G('height') * 2.54; return Math.round(10 * kg + 6.25 * cm - 5 * G('age') + 5); }
 function calcTDEE(w, level) { const m = { rest: 1.2, light: 1.35, moderate: 1.45, intense: 1.55 }; return Math.round(calcBMR(w) * (m[level] || 1.45) * CONFIG.expendAdjust); }
-function calcTarget(w, level) { return Math.round(calcTDEE(w, level) - CONFIG.deficitPerDay); }
-function getCurrentWeight() { if (!data.weights.length) return CONFIG.startWeight; return [...data.weights].sort((a, b) => b.date.localeCompare(a.date))[0].weight; }
+function calcTarget(w, level) { return Math.round(calcTDEE(w, level) - G('deficitPerDay')); }
+function getCurrentWeight() { if (!data.weights.length) return G('startWeight'); return [...data.weights].sort((a, b) => b.date.localeCompare(a.date))[0].weight; }
 
 // ===== CALORIES BURNED ESTIMATION =====
 function estimateBurn(type, duration, rpe, weight, subtype) {
@@ -1417,7 +1446,7 @@ function setActivity(level) {
   event.currentTarget.classList.add('active');
   const w = getCurrentWeight();
   document.getElementById('calTarget').textContent = calcTarget(w, level).toLocaleString();
-  document.getElementById('calDetail').textContent = 'TDEE ' + calcTDEE(w, level).toLocaleString() + ' − ' + CONFIG.deficitPerDay + ' deficit (with 5% adjustments)';
+  document.getElementById('calDetail').textContent = 'TDEE ' + calcTDEE(w, level).toLocaleString() + ' − ' + G('deficitPerDay') + ' deficit (with 5% adjustments)';
   updateCalorieSummary();
 }
 
@@ -1977,8 +2006,8 @@ function renderWeightChart() {
   if (summaryEl && sorted.length) {
     const latest = sorted[sorted.length - 1];
     const daysIn = daysBetween(data.startDate, today());
-    const goalPerDay = (CONFIG.startWeight - CONFIG.goalWeight) / (CONFIG.goalWeeks * 7);
-    const expectedWeight = Math.round((CONFIG.startWeight - (goalPerDay * daysIn)) * 10) / 10;
+    const goalPerDay = (G('startWeight') - G('goalWeight')) / (G('goalWeeks') * 7);
+    const expectedWeight = Math.round((G('startWeight') - (goalPerDay * daysIn)) * 10) / 10;
     const avg7 = sorted.length >= 2 ? sorted.slice(-7).reduce((s,w) => s + w.weight, 0) / Math.min(sorted.length, 7) : latest.weight;
     summaryEl.innerHTML =
       '<div style="display:flex;justify-content:space-around;text-align:center">' +
@@ -1991,9 +2020,9 @@ function renderWeightChart() {
   const gridColor = isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)';
   const textColor = isLight ? '#57606a' : '#8b949e';
   const goalPoints = [];
-  for (let i = 0; i <= CONFIG.goalWeeks * 7; i += 7) {
+  for (let i = 0; i <= G('goalWeeks') * 7; i += 7) {
     const d = new Date(data.startDate); d.setDate(d.getDate() + i);
-    goalPoints.push({ x: d.toISOString().split('T')[0], y: Math.round((CONFIG.startWeight - ((CONFIG.startWeight - CONFIG.goalWeight) / (CONFIG.goalWeeks * 7)) * i) * 10) / 10 });
+    goalPoints.push({ x: d.toISOString().split('T')[0], y: Math.round((G('startWeight') - ((G('startWeight') - G('goalWeight')) / (G('goalWeeks') * 7)) * i) * 10) / 10 });
   }
   const avgData = sorted.map((e, i) => {
     const win = sorted.slice(Math.max(0, i - 6), i + 1);
@@ -2012,7 +2041,7 @@ function renderWeightChart() {
         tooltip:{enabled:false},
       },
       scales:{ x:{type:'category',ticks:{color:textColor,font:{size:10},maxTicksLimit:8},grid:{color:gridColor}},
-        y:{min:CONFIG.goalWeight-3,max:CONFIG.startWeight+3,ticks:{color:textColor,font:{size:10}},grid:{color:gridColor}} }
+        y:{min:G('goalWeight')-3,max:G('startWeight')+3,ticks:{color:textColor,font:{size:10}},grid:{color:gridColor}} }
     }
   });
 }
@@ -2397,14 +2426,14 @@ function updateCalorieSummary() {
 
 // ===== DASHBOARD =====
 function refreshDashboard() {
-  const w = getCurrentWeight(); const lost = CONFIG.startWeight - w; const toGo = w - CONFIG.goalWeight;
-  const pct = Math.max(0, Math.min(100, (lost / (CONFIG.startWeight - CONFIG.goalWeight)) * 100));
+  const w = getCurrentWeight(); const lost = G('startWeight') - w; const toGo = w - G('goalWeight');
+  const pct = Math.max(0, Math.min(100, (lost / (G('startWeight') - G('goalWeight'))) * 100));
   const progBar = document.getElementById('progressBar');
   if (progBar) progBar.style.width = Math.min(pct, 100) + '%';
   document.getElementById('lbsLost').textContent = Math.max(0, lost).toFixed(1);
   // Goal pace indicator
   const daysIn = daysBetween(data.startDate, today());
-  const expectedLoss = ((CONFIG.startWeight - CONFIG.goalWeight) / (CONFIG.goalWeeks * 7)) * daysIn;
+  const expectedLoss = ((G('startWeight') - G('goalWeight')) / (G('goalWeeks') * 7)) * daysIn;
   const paceEl = document.getElementById('goalPace');
   if (paceEl) {
     if (daysIn < 3) { paceEl.textContent = 'Just started — keep going!'; paceEl.style.color = 'var(--text-secondary)'; }
@@ -2413,7 +2442,7 @@ function refreshDashboard() {
     else { paceEl.textContent = '🔴 Behind pace — ' + lost.toFixed(1) + ' lost vs ' + expectedLoss.toFixed(1) + ' expected'; paceEl.style.color = 'var(--accent-red)'; }
   }
   const weeksIn = Math.floor(daysBetween(data.startDate, today()) / 7) + 1;
-  document.getElementById('goalSubtitle').innerHTML = 'Week <strong>'+Math.min(weeksIn,CONFIG.goalWeeks)+'</strong> of '+CONFIG.goalWeeks+' — <strong>'+Math.max(0,toGo).toFixed(1)+'</strong> lbs to go';
+  document.getElementById('goalSubtitle').innerHTML = 'Week <strong>'+Math.min(weeksIn,G('goalWeeks'))+'</strong> of '+G('goalWeeks')+' — <strong>'+Math.max(0,toGo).toFixed(1)+'</strong> lbs to go';
   document.getElementById('dashWeight').textContent = w.toFixed(1);
   const todayCal = data.calories.find(c=>c.date===today());
   document.getElementById('dashCalBudget').textContent = todayCal ? todayCal.target.toLocaleString() : calcTarget(w,'moderate').toLocaleString();
@@ -2608,14 +2637,18 @@ async function exportData() {
   URL.revokeObjectURL(a.href);
   closeDataModal(); showToast('📤 Exported!');
 }
-function importData(ev) { const f=ev.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=e=>{try{const im=JSON.parse(e.target.result); if(im.weights&&im.workouts){data={myFoods:[],myWorkouts:[],myMeals:[],goal:null,goalHistory:[],profile:null,...im};saveData();closeDataModal(); showToast('📥 Imported!'); refreshDashboard();}}catch{showToast('⚠️ Error');}}; r.readAsText(f); ev.target.value=''; }
-function resetAllData() { if(confirm('⚠️ Delete ALL data?')&&confirm('Really? Cannot be undone.')){ data={weights:[],workouts:[],checkins:[],calories:[],myFoods:[],myWorkouts:[],myMeals:[],startDate:today()}; saveData(); closeDataModal(); showToast('🗑 Reset'); refreshDashboard(); } }
+function importData(ev) { const f=ev.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=e=>{try{const im=JSON.parse(e.target.result); if(im.weights&&im.workouts){data={myFoods:[],myWorkouts:[],myMeals:[],...im};
+          if(!data.goal) data.goal={startWeight:data.weights&&data.weights.length?data.weights[0].weight:179,goalWeight:158,goalWeeks:8,startDate:data.startDate,mode:'loss'};
+          if(!data.goalHistory) data.goalHistory=[];
+          if(!data.profile) data.profile={height:68,age:50};
+          data=data;saveData();closeDataModal(); showToast('📥 Imported!'); refreshDashboard();}}catch{showToast('⚠️ Error');}}; r.readAsText(f); ev.target.value=''; }
+function resetAllData() { if(confirm('⚠️ Delete ALL data?')&&confirm('Really? Cannot be undone.')){ data={weights:[],workouts:[],checkins:[],calories:[],myFoods:[],myWorkouts:[],myMeals:[],goal:null,goalHistory:[],profile:null,startDate:today()}; saveData(); closeDataModal(); showToast('🗑 Reset'); refreshDashboard(); } }
 
 // ===== INIT =====
 function init() {
   loadTheme(); loadData();
   const w=getCurrentWeight(); document.getElementById('calTarget').textContent=calcTarget(w,'moderate').toLocaleString();
-  document.getElementById('calDetail').textContent='TDEE '+calcTDEE(w,'moderate').toLocaleString()+' − '+CONFIG.deficitPerDay+' deficit (with 5% adjustments)';
+  document.getElementById('calDetail').textContent='TDEE '+calcTDEE(w,'moderate').toLocaleString()+' − '+G('deficitPerDay')+' deficit (with 5% adjustments)';
   const tc=data.checkins.find(c=>c.date===today());
   if(tc){document.getElementById('stressSlider').value=tc.stress;updateSlider('stress');setSleep(tc.sleep);document.getElementById('energySlider').value=tc.energy;updateSlider('energy');if(tc.note)document.getElementById('checkinNote').value=tc.note;
     if(tc.shabbat && document.getElementById('shabbatToggle')) document.getElementById('shabbatToggle').checked=true;
