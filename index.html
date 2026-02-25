@@ -1354,7 +1354,7 @@ function today() { const d=new Date(); return d.getFullYear()+'-'+String(d.getMo
 function formatDate(d) { return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
 function daysBetween(a, b) { return Math.floor((new Date(b) - new Date(a)) / 86400000); }
 function generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 5); }
-function showToast(msg) {
+function showToast(msg, duration) {
   const t = document.getElementById('toast');
   if (window._toastTimer) { clearTimeout(window._toastTimer); window._toastTimer = null; }
   if (window._toastDelay) { clearTimeout(window._toastDelay); window._toastDelay = null; }
@@ -1367,7 +1367,7 @@ function showToast(msg) {
     window._toastTimer = setTimeout(() => {
       t.classList.remove('show');
       setTimeout(() => { t.style.display = 'none'; }, 300);
-    }, 2500);
+    }, duration || 2500);
   }, 50);
 }
 
@@ -2146,7 +2146,10 @@ async function callAI(food) {
       } else {
         const errText = await r.text();
         console.warn('Worker error ' + r.status + ':', errText);
-        showToast('⚠️ AI worker error (' + r.status + ') — using local estimate');
+        // Parse error details if JSON
+        let detail = r.status;
+        try { const ej = JSON.parse(errText); detail = ej.details || ej.message || ej.error || r.status; } catch(x) { detail = errText.substring(0, 120); }
+        showToast('⚠️ AI error: ' + detail, 5000);
       }
     } catch(e) {
       console.warn('Worker fetch failed:', e.message);
