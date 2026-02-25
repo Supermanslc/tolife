@@ -1140,8 +1140,8 @@ input[type="range"]::-webkit-slider-thumb {
       <div class="quick-select" id="cardioSubtypeSelect">
         <button class="quick-btn" data-sub="bike" onclick="setCardioSubtype('bike')">🚲 Bike</button>
         <button class="quick-btn" data-sub="run" onclick="setCardioSubtype('run')">🏃 Run</button>
-        <button class="quick-btn" data-sub="golf-walk" onclick="setCardioSubtype('golf-walk')">⛳🚶 Golf Walk</button>
-        <button class="quick-btn" data-sub="golf-cart" onclick="setCardioSubtype('golf-cart')">⛳🛒 Golf Cart</button>
+        <button class="quick-btn" data-sub="golf-walk" onclick="setCardioSubtype('golf-walk')">⛳ Walk</button>
+        <button class="quick-btn" data-sub="golf-cart" onclick="setCardioSubtype('golf-cart')">🛒 Cart</button>
         <button class="quick-btn" data-sub="range" onclick="setCardioSubtype('range')">🏌️ Range</button>
         <button class="quick-btn" data-sub="swim" onclick="setCardioSubtype('swim')">🏊 Swim</button>
         <button class="quick-btn" data-sub="" onclick="setCardioSubtype('')">🏷 Other</button>
@@ -2800,17 +2800,29 @@ function importData(ev) {
     try {
       const im = JSON.parse(e.target.result);
       if (!im.weights || !im.workouts) { showToast('⚠️ Invalid file: missing weights or workouts'); return; }
-      // Preserve any existing goal/profile if the import doesn't have them
+      // Preserve any existing goal/profile/myFoods if the import doesn't have them
       const keepGoal = data.goal;
       const keepProfile = data.profile;
       const keepRef = data.referenceWeight;
+      const keepMyFoods = data.myFoods || [];
+      const keepMyWorkouts = data.myWorkouts || [];
+      const keepMyMeals = data.myMeals || [];
       data = { myFoods: [], myWorkouts: [], myMeals: [], ...im };
       if (!data.goal && keepGoal) data.goal = keepGoal;
       if (!data.profile && keepProfile) data.profile = keepProfile;
       if (!data.referenceWeight && keepRef) data.referenceWeight = keepRef;
+      // Preserve saved foods/workouts/meals if import doesn't have them
+      if ((!im.myFoods || !im.myFoods.length) && keepMyFoods.length) data.myFoods = keepMyFoods;
+      if ((!im.myWorkouts || !im.myWorkouts.length) && keepMyWorkouts.length) data.myWorkouts = keepMyWorkouts;
+      if ((!im.myMeals || !im.myMeals.length) && keepMyMeals.length) data.myMeals = keepMyMeals;
       sanityCheckGoal();
+      saveData();
       closeDataModal();
-      showToast('📥 Imported! ' + data.weights.length + ' weigh-ins, ' + data.workouts.length + ' workouts');
+      const parts = [data.weights.length + ' weigh-ins', data.workouts.length + ' workouts'];
+      if (data.myFoods.length) parts.push(data.myFoods.length + ' saved foods');
+      if (data.myMeals.length) parts.push(data.myMeals.length + ' meals');
+      if (data.myWorkouts.length) parts.push(data.myWorkouts.length + ' exercise templates');
+      showToast('📥 Imported! ' + parts.join(', '));
       refreshDashboard();
     } catch (err) {
       console.error('Import error:', err);
