@@ -980,7 +980,7 @@ input[type="range"]::-webkit-slider-thumb {
       <span style="font-size:0.88rem;font-weight:600;color:var(--text-secondary)">⛽ Daily Fuel Gauge</span>
       <span class="stat-value stat-green" id="dashRemaining" style="font-size:1.1rem">—</span>
     </div>
-    <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:6px">Budget + Burned − Consumed = Remaining</div>
+    <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:6px">Budget + Exercise Credit (50%) − Consumed</div>
     <div class="calorie-bar-container"><div class="calorie-bar" id="dashBalanceBar" style="width:0%"></div></div>
     <div style="display:flex;justify-content:space-between;font-size:0.82rem;color:var(--text-muted);margin-top:4px">
       <span style="color:var(--accent-teal);font-weight:700"><strong id="dashConsumedBar">0</strong> cal consumed</span>
@@ -1140,7 +1140,9 @@ input[type="range"]::-webkit-slider-thumb {
       <div class="quick-select" id="cardioSubtypeSelect">
         <button class="quick-btn" data-sub="bike" onclick="setCardioSubtype('bike')">🚲 Bike</button>
         <button class="quick-btn" data-sub="run" onclick="setCardioSubtype('run')">🏃 Run</button>
-        <button class="quick-btn" data-sub="golf" onclick="setCardioSubtype('golf')">⛳ Golf</button>
+        <button class="quick-btn" data-sub="golf-walk" onclick="setCardioSubtype('golf-walk')">⛳🚶 Golf Walk</button>
+        <button class="quick-btn" data-sub="golf-cart" onclick="setCardioSubtype('golf-cart')">⛳🛒 Golf Cart</button>
+        <button class="quick-btn" data-sub="range" onclick="setCardioSubtype('range')">🏌️ Range</button>
         <button class="quick-btn" data-sub="swim" onclick="setCardioSubtype('swim')">🏊 Swim</button>
         <button class="quick-btn" data-sub="" onclick="setCardioSubtype('')">🏷 Other</button>
       </div>
@@ -1375,18 +1377,27 @@ function calcTarget(w, level) { return Math.round(calcTDEE(w, level) - G('defici
 function getCurrentWeight() { if (!data.weights.length) return G('startWeight'); return [...data.weights].sort((a, b) => b.date.localeCompare(a.date))[0].weight; }
 
 // ===== CALORIES BURNED ESTIMATION =====
+// v6.2: Realistic MET values, separate golf-walk/golf-cart/range
 function estimateBurn(type, duration, rpe, weight, subtype) {
-  // MET-based estimation with activity-specific values
   const kg = weight * 0.453592;
   let met;
   if (type === 'rest') return 0;
   
-  // Sub-type specific METs (more accurate than generic cardio)
-  if (subtype === 'golf') {
-    met = 3.5 + (rpe / 10) * 5; // 3.5-8.5 (golf: walking course, carrying clubs)
+  // Activity-specific METs based on research
+  if (subtype === 'golf-walk') {
+    // Walking the course with clubs: MET 4.3-5.5
+    met = 4.3 + (rpe / 10) * 1.2;
+  } else if (subtype === 'golf-cart') {
+    // Riding cart, walking to/from ball: MET 3.5 (fixed, RPE has minimal effect)
+    met = 3.5;
+  } else if (subtype === 'range') {
+    // Driving range: mostly standing + swinging: MET 3.0
+    met = 3.0;
+  } else if (subtype === 'golf') {
+    // Legacy "golf" entries — treat as cart (conservative)
+    met = 3.5;
   } else if (subtype === 'bike') {
-    // Reduced from generic cardio: stationary/casual cycling
-    met = 3.5 + (rpe / 10) * 5; // 3.5-8.5 (was 4-11, ~15% reduction at high RPE)
+    met = 3.5 + (rpe / 10) * 5; // 3.5-8.5
   } else if (subtype === 'swim') {
     met = 4 + (rpe / 10) * 6; // 4-10
   } else if (subtype === 'run') {
@@ -1396,7 +1407,6 @@ function estimateBurn(type, duration, rpe, weight, subtype) {
   } else if (type === 'weights') {
     met = 2.5 + (rpe / 10) * 4; // 2.5-6.5
   } else if (type === 'cardio') {
-    // Generic cardio (walking etc) — slightly reduced
     met = 3.5 + (rpe / 10) * 6; // 3.5-9.5
   } else {
     met = 3;
@@ -1404,8 +1414,17 @@ function estimateBurn(type, duration, rpe, weight, subtype) {
 
   const mins = duration || (type === 'weights' ? 45 : type === 'cardio' ? 30 : 20);
   const cals = Math.round((met * kg * mins) / 60);
-  // Apply conservative -5% adjustment
   return Math.round(cals * CONFIG.expendAdjust);
+}
+
+// v6.2: Only 50% of exercise calories count toward daily budget
+// This prevents the "eat back exercise" trap
+const EXERCISE_CREDIT_RATE = 0.50;
+
+function getExerciseBudgetCredit(dateStr) {
+  const dayWorkouts = data.workouts.filter(w => w.date === (dateStr || today()));
+  const totalBurned = dayWorkouts.reduce((sum, w) => sum + (w.calsBurned || 0), 0);
+  return Math.round(totalBurned * EXERCISE_CREDIT_RATE);
 }
 
 function getTodayBurned() {
@@ -1477,7 +1496,9 @@ function setActivity(level) {
   event.currentTarget.classList.add('active');
   const w = getCurrentWeight();
   document.getElementById('calTarget').textContent = calcTarget(w, level).toLocaleString();
-  document.getElementById('calDetail').textContent = 'TDEE ' + calcTDEE(w, level).toLocaleString() + ' − ' + G('deficitPerDay') + ' deficit (with 5% adjustments)';
+  const credit = getExerciseBudgetCredit();
+  const creditStr = credit > 0 ? ' + ' + credit + ' exercise (50%)' : '';
+  document.getElementById('calDetail').textContent = 'TDEE ' + calcTDEE(w, level).toLocaleString() + ' − ' + G('deficitPerDay') + ' deficit' + creditStr;
   updateCalorieSummary();
 }
 
@@ -1531,19 +1552,21 @@ function saveCheckin() {
     }
   }
 
-  // Weekly compensation: calculate total extra from Shabbat/special days and spread across remaining normal days
+  // Weekly compensation: calculate total ACTUAL overage from Shabbat/special days and spread across remaining normal days
+  // v6.2: Uses actual consumed vs base target (not just the +400 bump), runs regardless of shabbatMode toggle
   const weekStart = new Date(); weekStart.setDate(weekStart.getDate() - weekStart.getDay());
   const wsStr = weekStart.getFullYear()+'-'+String(weekStart.getMonth()+1).padStart(2,'0')+'-'+String(weekStart.getDate()).padStart(2,'0');
   const weekEnd = new Date(weekStart); weekEnd.setDate(weekEnd.getDate() + 7);
   const weStr = weekEnd.getFullYear()+'-'+String(weekEnd.getMonth()+1).padStart(2,'0')+'-'+String(weekEnd.getDate()).padStart(2,'0');
-  // Find all shabbat/special days this week (including today if just toggled, and tomorrow if auto-set)
+  // Find all shabbat/special days this week
   const specialDays = data.calories.filter(c => c.date >= wsStr && c.date < weStr && c.shabbat);
   if (!shabbatMode && specialDays.length > 0) {
-    // Total extra calories granted on special days
-    const totalExtra = specialDays.reduce((sum, c) => {
+    // Total actual overage: what was CONSUMED on special days vs what the base (non-shabbat) target would have been
+    const totalOverage = specialDays.reduce((sum, c) => {
       const baseTarget = calcTarget(w, c.activity === 'rest' ? 'rest' : 'moderate');
-      const extra = c.target - baseTarget;
-      return sum + (extra > 0 ? extra : 0);
+      const consumed = c.consumed || 0;
+      const overage = consumed - baseTarget;
+      return sum + (overage > 0 ? overage : 0);
     }, 0);
     // Count remaining non-special days in week (including today)
     const todayDow = new Date().getDay();
@@ -1554,8 +1577,8 @@ function saveCheckin() {
       const cdStr = checkDate.getFullYear()+'-'+String(checkDate.getMonth()+1).padStart(2,'0')+'-'+String(checkDate.getDate()).padStart(2,'0');
       if (!specialDays.find(s => s.date === cdStr)) normalDaysLeft++;
     }
-    if (normalDaysLeft > 0 && totalExtra > 0) {
-      const dailyComp = Math.round(totalExtra / normalDaysLeft);
+    if (normalDaysLeft > 0 && totalOverage > 0) {
+      const dailyComp = Math.round(totalOverage / normalDaysLeft);
       target = Math.max(target - dailyComp, 1200);
     }
   }
@@ -1611,7 +1634,7 @@ function updateBurnEstimate() {
   const duration = parseInt(document.getElementById('workoutDuration').value) || 0;
   const w = getCurrentWeight();
   const est = estimateBurn(currentWorkoutType, duration, rpe, w, currentCardioSubtype);
-  document.getElementById('burnEstimate').textContent = 'AI estimate: ~' + est + ' cal (override below if your machine shows different)';
+  document.getElementById('burnEstimate').textContent = 'AI estimate: ~' + est + ' cal (50% = ' + Math.round(est * EXERCISE_CREDIT_RATE) + ' added to budget)';
 }
 
 function setCardioFocus(focus) {
@@ -1639,7 +1662,7 @@ function saveWorkout() {
   document.getElementById('workoutHR').value = '';
   document.getElementById('workoutNote').value = '';
   document.getElementById('workoutCalsBurned').value = '';
-  showToast('💪 Workout logged! ' + calsBurned + ' cal burned'); renderWorkoutHistory(); renderMyWorkouts(); refreshDashboard();
+  showToast('💪 Workout logged! ' + calsBurned + ' cal burned (+'+ Math.round(calsBurned * EXERCISE_CREDIT_RATE) +' to budget)'); renderWorkoutHistory(); renderMyWorkouts(); refreshDashboard();
 }
 
 function renderWorkoutHistory() {
@@ -1737,7 +1760,7 @@ function quickLogMyWorkout(id) {
   });
   template.count = (template.count || 0) + 1;
   saveData(); renderWorkoutHistory(); renderMyWorkouts(); refreshDashboard();
-  showToast('💪 ' + template.name + ' logged! ' + calsBurned + ' cal');
+  showToast('💪 ' + template.name + ' logged! ' + calsBurned + ' cal (+' + Math.round(calsBurned * EXERCISE_CREDIT_RATE) + ' to budget)');
 }
 
 function prefillMyWorkout(id) {
@@ -1837,7 +1860,7 @@ function updateWalkingEstimate() {
   if (steps > 0) {
     const rpe = parseInt(document.getElementById('walkingRPE').value) || 2;
     const cals = calcWalkingCals(steps, rpe);
-    est.textContent = '~' + cals + ' cal burned';
+    est.textContent = '~' + cals + ' cal burned (+' + Math.round(cals * EXERCISE_CREDIT_RATE) + ' to budget)';
     est.style.color = 'var(--accent-green)';
   } else { est.textContent = ''; }
 }
@@ -1845,6 +1868,9 @@ function updateWalkingEstimate() {
 function logWalking() {
   const steps = parseInt(document.getElementById('walkingSteps').value);
   if (!steps || steps < 100) { showToast('⚠️ Enter your steps'); return; }
+  // v6.2: Warn if golf already logged today (steps are included in golf calorie count)
+  const todayGolf = data.workouts.filter(w => w.date === today() && ((w.note||'').toLowerCase().includes('golf') || (w.note||'').toLowerCase().includes('holes') || w.cardioSubtype === 'golf-walk' || w.cardioSubtype === 'golf-cart'));
+  if (todayGolf.length > 0 && !confirm('⛳ You already logged golf today. Golf calorie estimates include the walking between shots. Log these steps separately only if they were OUTSIDE your golf round.')) return;
   const rpe = parseInt(document.getElementById('walkingRPE').value) || 2;
   const cals = calcWalkingCals(steps, rpe);
   data.workouts.push({
@@ -1857,7 +1883,7 @@ function logWalking() {
   saveData();
   document.getElementById('walkingSteps').value = '';
   document.getElementById('walkingEstimate').textContent = '';
-  showToast('🚶 ' + steps.toLocaleString() + ' steps logged! ' + cals + ' cal');
+  showToast('🚶 ' + steps.toLocaleString() + ' steps! ' + cals + ' cal (+' + Math.round(cals * EXERCISE_CREDIT_RATE) + ' to budget)');
   renderWorkoutHistory(); renderMyWorkouts(); refreshDashboard();
 }
 
@@ -2522,12 +2548,13 @@ function refreshDashboard() {
   if (document.getElementById('dashConsumedBar')) document.getElementById('dashConsumedBar').textContent = consumed.toLocaleString();
   const burned = getTodayBurned();
   document.getElementById('dashBurned').textContent = burned ? burned.toLocaleString() : '—';
+  const exerciseCredit = getExerciseBudgetCredit();
   const budget = todayCal ? todayCal.target : calcTarget(w, 'moderate');
-  const remaining = budget + burned - consumed;
+  const remaining = budget + exerciseCredit - consumed;
   document.getElementById('dashRemaining').textContent = remaining.toLocaleString();
   document.getElementById('dashRemaining').className = 'stat-value ' + (remaining >= 0 ? 'stat-green' : 'stat-red');
   // Balance bar
-  const totalBudget = budget + burned;
+  const totalBudget = budget + exerciseCredit;
   const balPct = totalBudget > 0 ? Math.min((consumed / totalBudget) * 100, 110) : 0;
   const balBar = document.getElementById('dashBalanceBar');
   const balLabel = document.getElementById('dashBalanceLabel');
@@ -2603,11 +2630,18 @@ function renderDashboardInsights() {
     const r7 = sorted.slice(-7), p7 = sorted.slice(-14,-7);
     const rA = r7.reduce((s,e)=>s+e.weight,0)/r7.length, pA = p7.reduce((s,e)=>s+e.weight,0)/p7.length;
     const wl = pA - rA;
-    if (wl<0.5) insights.push({type:'warn',icon:'⚠️',text:'Weight loss slowed to '+wl.toFixed(1)+' lbs/week. Consider increasing calorie adjustment to 10%.'});
-    else if (wl>2.5) insights.push({type:'warn',icon:'⚡',text:'Losing '+wl.toFixed(1)+' lbs/week — consider eating more to preserve muscle.'});
+    if (wl<0) insights.push({type:'warn',icon:'📈',text:'Weight up '+Math.abs(wl).toFixed(1)+' lbs this week. Check exercise burn accuracy and portion sizes.'});
+    else if (wl<0.5) insights.push({type:'warn',icon:'⚠️',text:'Weight loss slowed to '+wl.toFixed(1)+' lbs/week. Review your biggest meals — small overages compound daily.'});
+    else if (wl>2.5) insights.push({type:'warn',icon:'⚡',text:'Losing '+wl.toFixed(1)+' lbs/week — fast but often normal early on due to water weight.'});
   }
   const streak = calcStreak();
   if (streak>=7) insights.push({type:'good',icon:'🔥',text:streak+'-day streak! Consistency is the #1 predictor of success.'});
+  // Exercise credit reminder
+  const todayBurned = getTodayBurned();
+  if (todayBurned > 0) {
+    const credit = getExerciseBudgetCredit();
+    insights.push({type:'info',icon:'🏋️',text:'Burned '+todayBurned+' cal today → +'+credit+' added to budget (50% credit). Exercise is bonus deficit, not permission to eat more.'});
+  }
   c.innerHTML = insights.map(i=>'<div class="insight-card insight-'+i.type+'"><span class="insight-icon">'+i.icon+'</span><span>'+i.text+'</span></div>').join('');
 }
 
@@ -2649,13 +2683,82 @@ function renderCorrelations() {
 
 function renderAdaptiveSuggestions() {
   const c = document.getElementById('adaptiveSuggestions');
-  if (data.weights.length<14) { c.innerHTML='<div class="insight-card insight-info"><span class="insight-icon">📊</span><span>Keep logging — after 2-3 weeks ToLife! will suggest adjustments.</span></div>'; return; }
-  const sorted=[...data.weights].sort((a,b)=>a.date.localeCompare(b.date)); const r7=sorted.slice(-7),p7=sorted.slice(-14,-7);
-  const rA=r7.reduce((s,e)=>s+e.weight,0)/r7.length, pA=p7.reduce((s,e)=>s+e.weight,0)/p7.length, wl=pA-rA; const sug=[];
-  if (wl<0.5) sug.push({type:'warn',icon:'🎯',text:'Plateau detected. Try: increase cal adjustment to 10%, add one extra cardio session, or reduce portion at largest meal.'});
-  else if (wl>=1&&wl<=2) sug.push({type:'good',icon:'✅',text:'Losing '+wl.toFixed(1)+' lbs/week — right on track!'});
-  else if (wl>2.5) sug.push({type:'warn',icon:'⚡',text:'Losing '+wl.toFixed(1)+' lbs/week. Add 200 cal/day to protect muscle.'});
-  c.innerHTML = sug.map(s=>'<div class="insight-card insight-'+s.type+'"><span class="insight-icon">'+s.icon+'</span><span>'+s.text+'</span></div>').join('');
+  if (data.weights.length<7) { c.innerHTML='<div class="insight-card insight-info"><span class="insight-icon">📊</span><span>Keep logging — after 1 week ToLife! will suggest adjustments.</span></div>'; return; }
+  const sorted=[...data.weights].sort((a,b)=>a.date.localeCompare(b.date));
+  const sug=[];
+  
+  // Weight trend analysis
+  if (sorted.length >= 14) {
+    const r7=sorted.slice(-7),p7=sorted.slice(-14,-7);
+    const rA=r7.reduce((s,e)=>s+e.weight,0)/r7.length, pA=p7.reduce((s,e)=>s+e.weight,0)/p7.length, wl=pA-rA;
+    if (wl<0) sug.push({type:'warn',icon:'📈',text:'Weight trending UP by '+Math.abs(wl).toFixed(1)+' lbs this week vs last. Review portion sizes and exercise burn accuracy — the deficit may be smaller than expected.'});
+    else if (wl<0.5) sug.push({type:'warn',icon:'🎯',text:'Plateau detected ('+wl.toFixed(1)+' lbs/week). Try: cut 100 cal from your largest meal, or add 15 min to one workout.'});
+    else if (wl>=1&&wl<=2) sug.push({type:'good',icon:'✅',text:'Losing '+wl.toFixed(1)+' lbs/week — sustainable and healthy pace!'});
+    else if (wl>2.5) sug.push({type:'warn',icon:'⚡',text:'Losing '+wl.toFixed(1)+' lbs/week — fast but normal in early weeks (water weight). If this continues past week 3, add 150-200 cal/day.'});
+  }
+  
+  // Over-target frequency
+  const recent14 = data.calories.filter(c => c.consumed > 0).slice(-14);
+  if (recent14.length >= 7) {
+    const overDays = recent14.filter(c => c.consumed > c.target);
+    const overPct = Math.round(overDays.length / recent14.length * 100);
+    if (overPct > 60) {
+      const avgOver = Math.round(overDays.reduce((s,c) => s + (c.consumed - c.target), 0) / overDays.length);
+      sug.push({type:'warn',icon:'📋',text:'Over target '+overPct+'% of days (avg +'+avgOver+' cal). Even small daily overages compound — '+avgOver+' cal/day = '+(avgOver*7/3500).toFixed(1)+' lbs/week of stalled loss.'});
+    }
+  }
+  
+  // Exercise burn reality check
+  const recentW = data.workouts.filter(w => w.date >= sorted[Math.max(0,sorted.length-14)].date);
+  const golfWorkouts = recentW.filter(w => {
+    const n = (w.note||'').toLowerCase();
+    return n.includes('golf') || n.includes('holes') || n.includes('hitting') || n.includes('range') ||
+           w.cardioSubtype === 'golf' || w.cardioSubtype === 'golf-cart' || w.cardioSubtype === 'golf-walk' || w.cardioSubtype === 'range';
+  });
+  if (golfWorkouts.length > 0) {
+    const avgGolfBurn = Math.round(golfWorkouts.reduce((s,w) => s + w.calsBurned, 0) / golfWorkouts.length);
+    if (avgGolfBurn > 500) {
+      sug.push({type:'warn',icon:'⛳',text:'Golf burns averaging '+avgGolfBurn+' cal — likely overestimated. Cart golf burns ~300-400 cal/round, range ~200 cal/hr. Select "Golf Cart" or "Range" for accurate estimates.'});
+    }
+  }
+  
+  // 50% credit reminder
+  const totalBurned14 = recentW.reduce((s,w) => s + (w.calsBurned||0), 0);
+  if (totalBurned14 > 3000) {
+    sug.push({type:'info',icon:'🔬',text:'Exercise builds fitness but diet drives weight loss. Your budget adds only 50% of exercise calories — this is intentional. Burns are always estimates; eating back 100% leads to stalls.'});
+  }
+  
+  // Protein check
+  const recentCals = data.calories.filter(c => c.log && c.log.length > 0).slice(-7);
+  if (recentCals.length >= 3) {
+    const avgProtein = Math.round(recentCals.reduce((s,c) => s + c.log.reduce((ss,f) => ss + (f.protein||0), 0), 0) / recentCals.length);
+    const w = getCurrentWeight();
+    const targetProtein = Math.round(w * 0.36); // 0.36g per lb = minimum
+    if (avgProtein < targetProtein) {
+      sug.push({type:'info',icon:'🥩',text:'Protein averaging '+avgProtein+'g/day — aim for '+targetProtein+'g+ to preserve muscle during weight loss. Turkey sticks, eggs, and protein shakes are your best tools.'});
+    } else {
+      sug.push({type:'good',icon:'💪',text:'Protein intake solid at '+avgProtein+'g/day (target: '+targetProtein+'g+). This helps preserve muscle while losing fat.'});
+    }
+  }
+  
+  // Late-night eating pattern
+  if (recentCals.length >= 5) {
+    let lateNightDays = 0;
+    recentCals.forEach(c => {
+      const lateItems = c.log.filter(f => {
+        if (!f.time) return false;
+        const h = parseInt(f.time.split(':')[0]);
+        const ampm = f.time.toLowerCase();
+        return (ampm.includes('pm') && h >= 9) || (ampm.includes('am') && h <= 1);
+      });
+      if (lateItems.length > 0) lateNightDays++;
+    });
+    if (lateNightDays / recentCals.length > 0.5) {
+      sug.push({type:'info',icon:'🌙',text:'Eating after 9 PM on '+Math.round(lateNightDays/recentCals.length*100)+'% of days. Late eating doesn\'t change physics but often means extra unplanned calories. Try closing the kitchen earlier.'});
+    }
+  }
+  
+  c.innerHTML = sug.length ? sug.map(s=>'<div class="insight-card insight-'+s.type+'"><span class="insight-icon">'+s.icon+'</span><span>'+s.text+'</span></div>').join('') : '<div class="insight-card insight-good"><span class="insight-icon">✅</span><span>Looking good! Keep logging consistently.</span></div>';
 }
 
 // ===== STREAKS =====
@@ -2722,7 +2825,7 @@ function resetAllData() { if(confirm('⚠️ Delete ALL data?')&&confirm('Really
 function init() {
   loadTheme(); loadData();
   const w=getCurrentWeight(); document.getElementById('calTarget').textContent=calcTarget(w,'moderate').toLocaleString();
-  document.getElementById('calDetail').textContent='TDEE '+calcTDEE(w,'moderate').toLocaleString()+' − '+G('deficitPerDay')+' deficit (with 5% adjustments)';
+  document.getElementById('calDetail').textContent='TDEE '+calcTDEE(w,'moderate').toLocaleString()+' − '+G('deficitPerDay')+' deficit';
   const tc=data.checkins.find(c=>c.date===today());
   if(tc){document.getElementById('stressSlider').value=tc.stress;updateSlider('stress');setSleep(tc.sleep);document.getElementById('energySlider').value=tc.energy;updateSlider('energy');if(tc.note)document.getElementById('checkinNote').value=tc.note;
     if(tc.shabbat && document.getElementById('shabbatToggle')) document.getElementById('shabbatToggle').checked=true;
