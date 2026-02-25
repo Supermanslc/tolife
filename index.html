@@ -2138,7 +2138,7 @@ async function estimateCalories() {
 async function callAI(food) {
   if (CONFIG.workerUrl) {
     try {
-      const r = await fetch(CONFIG.workerUrl, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({food}) });
+      const r = await fetch(CONFIG.workerUrl, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({food}), signal: AbortSignal.timeout(15000) });
       if (r.ok) {
         const d = await r.json();
         if (d.items) return d;
@@ -2146,15 +2146,30 @@ async function callAI(food) {
       } else {
         const errText = await r.text();
         console.warn('Worker error ' + r.status + ':', errText);
+        showToast('⚠️ AI worker error (' + r.status + ') — using local estimate');
       }
-    } catch(e) { console.warn('Worker fetch failed:', e.message); }
+    } catch(e) {
+      console.warn('Worker fetch failed:', e.message);
+      showToast('⚠️ AI worker unreachable — using local estimate');
+    }
   }
-  // Fallback to local estimation (direct API calls blocked by CORS)
-  console.log('Using local estimation fallback');
+  // Fallback to local estimation
   return estimateLocally(food);
 }
 
 function estimateLocally(desc) {
+  // v6.2: If user explicitly states calories (e.g. "150 calories yogurt"), use that number
+  const calMatch = desc.match(/(\d{2,4})\s*(?:cal|calories|kcal)/i);
+  if (calMatch) {
+    const stated = parseInt(calMatch[1]);
+    const adj = Math.round(stated * CONFIG.intakeAdjust);
+    const name = desc.replace(/\d{2,4}\s*(?:cal|calories|kcal)\s*/i, '').trim() || desc;
+    // Rough macro split: 25% protein, 45% carbs, 30% fat
+    const p = Math.round((stated * 0.25) / 4);
+    const ca = Math.round((stated * 0.45) / 4);
+    const f = Math.round((stated * 0.30) / 9);
+    return {items:[{name:name,calories:adj,protein:p,carbs:ca,fat:f}],total_calories:adj,total_protein:p,total_carbs:ca,total_fat:f,note:'Used your stated '+stated+' cal (+5% adjustment).'};
+  }
   const lower = desc.toLowerCase().replace(/[^a-z0-9\s]/g, '');
   const items = []; let tC=0,tP=0,tCa=0,tF=0;
   const foods = [
