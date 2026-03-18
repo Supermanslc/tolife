@@ -604,8 +604,39 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 .my-foods-list {
-  max-height: 250px;
+  max-height: 400px;
   overflow-y: auto;
+}
+
+.quick-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 18px;
+  border: 1.5px solid var(--border);
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+
+.quick-pill:hover { border-color: var(--accent-green); color: var(--text-primary); }
+
+.quick-pill.selected {
+  background: var(--accent-green-soft);
+  border-color: var(--accent-green);
+  color: var(--accent-green);
+}
+
+.quick-pill .pill-cal {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  opacity: 0.7;
 }
 
 .my-food-item {
@@ -936,7 +967,7 @@ input[type="range"]::-webkit-slider-thumb {
     </div>
   </div>
   <div class="header-actions">
-    <span class="version-tag">v6.2</span>
+    <span class="version-tag">v6.3</span>
     <button class="data-btn" onclick="showDataModal()">💾</button>
     <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">☀️</button>
   </div>
@@ -1094,10 +1125,19 @@ input[type="range"]::-webkit-slider-thumb {
     <div class="ai-result" id="aiResult"></div>
   </div>
   <div class="card">
-    <div class="my-foods-header">
-      <div class="card-title" style="margin:0">⭐ My Foods & Meals — Tap to select, add to today</div>
+    <div class="card-title" style="margin-bottom:8px">⚡ Quick Picks</div>
+    <div id="quickPicksArea" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+    <div id="yesterdayArea" style="display:none">
+      <div style="font-size:0.82rem;font-weight:600;color:var(--text-secondary);margin:10px 0 6px;text-transform:uppercase;letter-spacing:0.5px">📋 Repeat from Yesterday</div>
+      <div id="yesterdayItems" style="display:flex;flex-wrap:wrap;gap:6px"></div>
     </div>
-    <div class="my-foods-list" id="myFoodsList"></div>
+    <button class="btn-primary" id="addQuickBtn" onclick="addQuickSelections()" style="display:none;margin-top:10px;font-size:0.85rem;padding:10px;width:100%">✅ Add Selected</button>
+    <div style="margin-top:10px">
+      <button class="btn-secondary" id="toggleAllItemsBtn" onclick="toggleAllItems()" style="font-size:0.82rem;padding:6px 14px;width:100%">📦 All Items (tap to expand)</button>
+    </div>
+    <div id="allItemsArea" style="display:none;margin-top:8px">
+      <div class="my-foods-list" id="myFoodsList"></div>
+    </div>
     <button class="btn-primary" id="addSelectedBtn" onclick="addSelectedMyFoods()" style="display:none;margin-top:10px;font-size:0.85rem;padding:10px">✅ Add Selected</button>
   </div>
   <div class="card">
@@ -1266,7 +1306,7 @@ input[type="range"]::-webkit-slider-thumb {
   <button class="nav-item" onclick="showPage('Insights')"><span class="nav-icon">🧠</span><span>Insights</span></button>
 </nav>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script><script>
-// ===== ToLife! v6.2 — App Logic =====
+// ===== ToLife! v6.3 — App Logic =====
 // L'Chaim — to health, to strength
 
 const CONFIG = {
@@ -1467,7 +1507,7 @@ function showPage(name) {
   if (name === 'Dashboard') refreshDashboard();
   if (name === 'Insights') { refreshInsights(); renderGoalEditor(); updateMetabolicDisplay(); renderWeightChart(); renderWeightHistory(); renderWeightStats(); }
   if (name === 'Workout') { renderWorkoutHistory(); renderMyWorkouts(); }
-  if (name === 'Nutrition') { renderMyFoods(); renderFoodLog(); updateCalorieSummary(); }
+  if (name === 'Nutrition') { renderQuickPicks(); renderFoodLog(); updateCalorieSummary(); }
 }
 
 // ===== CHECK-IN =====
@@ -2385,6 +2425,154 @@ function confirmSaveMeal() {
 
 // ===== MY FOODS RECALL =====
 let selectedMyFoods = new Set();
+let selectedQuickPicks = new Set();
+
+// v6.3: Get combined top items (meals + foods) by frequency
+function getTopItems(limit) {
+  const all = [];
+  if (data.myMeals) data.myMeals.forEach(m => all.push({...m, isMeal: true, freq: m.count || 0}));
+  if (data.myFoods) data.myFoods.forEach(f => all.push({...f, isMeal: false, freq: f.count || 0}));
+  return all.sort((a, b) => b.freq - a.freq).slice(0, limit);
+}
+
+// v6.3: Get yesterday's food log items (minus those already in Quick Picks)
+function getYesterdayItems(quickPickIds) {
+  const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+  const yStr = yesterday.getFullYear()+'-'+String(yesterday.getMonth()+1).padStart(2,'0')+'-'+String(yesterday.getDate()).padStart(2,'0');
+  const yEntry = data.calories.find(c => c.date === yStr);
+  if (!yEntry || !yEntry.log || !yEntry.log.length) return [];
+  // Deduplicate by name and exclude items already in quick picks
+  const seen = new Set();
+  const items = [];
+  for (const item of yEntry.log) {
+    const cleanName = item.name.replace(/^🍱\s*/, '').trim();
+    if (seen.has(cleanName)) continue;
+    seen.add(cleanName);
+    // Check if this matches a quick pick
+    const matchesQP = quickPickIds.has(cleanName.toLowerCase());
+    if (!matchesQP) {
+      items.push({name: item.name, calories: item.calories, protein: item.protein||0, carbs: item.carbs||0, fat: item.fat||0});
+    }
+  }
+  return items;
+}
+
+function renderQuickPicks() {
+  const qpArea = document.getElementById('quickPicksArea');
+  const yArea = document.getElementById('yesterdayArea');
+  const yItems = document.getElementById('yesterdayItems');
+  selectedQuickPicks.clear();
+
+  // Quick Picks: top 10 by frequency
+  const topItems = getTopItems(10);
+  if (!topItems.length) {
+    qpArea.innerHTML = '<div style="font-size:0.85rem;color:var(--text-muted)">Log a few days to build your Quick Picks.</div>';
+    yArea.style.display = 'none';
+    return;
+  }
+
+  const quickPickNames = new Set(topItems.map(t => (t.isMeal ? t.name : t.name).toLowerCase()));
+
+  qpArea.innerHTML = topItems.map((item, i) => {
+    const prefix = item.isMeal ? '🍱 ' : '';
+    const label = prefix + item.name;
+    return '<div class="quick-pill" id="qp-'+i+'" onclick="toggleQuickPick('+i+')" data-idx="'+i+'">' +
+      '<span>' + label + '</span> <span class="pill-cal">' + item.calories + '</span></div>';
+  }).join('');
+
+  // Store for later use when adding
+  qpArea._topItems = topItems;
+
+  // Yesterday section
+  const yList = getYesterdayItems(quickPickNames);
+  if (yList.length) {
+    yArea.style.display = 'block';
+    yItems.innerHTML = yList.map((item, i) => {
+      return '<div class="quick-pill" id="yp-'+i+'" onclick="toggleYesterdayPick('+i+')" data-idx="'+i+'">' +
+        '<span>' + item.name + '</span> <span class="pill-cal">' + item.calories + '</span></div>';
+    }).join('');
+    yItems._yList = yList;
+  } else {
+    yArea.style.display = 'none';
+  }
+
+  document.getElementById('addQuickBtn').style.display = 'none';
+}
+
+function toggleQuickPick(idx) {
+  const el = document.getElementById('qp-'+idx);
+  if (selectedQuickPicks.has('qp-'+idx)) {
+    selectedQuickPicks.delete('qp-'+idx);
+    el.classList.remove('selected');
+  } else {
+    selectedQuickPicks.add('qp-'+idx);
+    el.classList.add('selected');
+  }
+  updateQuickBtn();
+}
+
+function toggleYesterdayPick(idx) {
+  const el = document.getElementById('yp-'+idx);
+  if (selectedQuickPicks.has('yp-'+idx)) {
+    selectedQuickPicks.delete('yp-'+idx);
+    el.classList.remove('selected');
+  } else {
+    selectedQuickPicks.add('yp-'+idx);
+    el.classList.add('selected');
+  }
+  updateQuickBtn();
+}
+
+function updateQuickBtn() {
+  const btn = document.getElementById('addQuickBtn');
+  btn.style.display = selectedQuickPicks.size > 0 ? 'block' : 'none';
+  btn.textContent = '✅ Add ' + selectedQuickPicks.size + ' Selected to Today\'s Log';
+}
+
+function addQuickSelections() {
+  if (!selectedQuickPicks.size) return;
+  const entry = getTodayCalorieEntry();
+  const timeStr = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  let count = 0;
+  const qpArea = document.getElementById('quickPicksArea');
+  const yItems = document.getElementById('yesterdayItems');
+  const topItems = qpArea._topItems || [];
+  const yList = yItems._yList || [];
+
+  selectedQuickPicks.forEach(key => {
+    if (key.startsWith('qp-')) {
+      const idx = parseInt(key.split('-')[1]);
+      const item = topItems[idx];
+      if (!item) return;
+      const prefix = item.isMeal ? '🍱 ' : '';
+      entry.log.push({id:generateId(), name:prefix+item.name, calories:item.calories, protein:item.protein||0, carbs:item.carbs||0, fat:item.fat||0, time:timeStr});
+      // Bump count
+      if (item.isMeal) { const m = data.myMeals.find(x=>x.id===item.id); if(m) m.count=(m.count||0)+1; }
+      else { const f = data.myFoods.find(x=>x.id===item.id); if(f) f.count=(f.count||0)+1; }
+      count++;
+    } else if (key.startsWith('yp-')) {
+      const idx = parseInt(key.split('-')[1]);
+      const item = yList[idx];
+      if (!item) return;
+      entry.log.push({id:generateId(), name:item.name, calories:item.calories, protein:item.protein||0, carbs:item.carbs||0, fat:item.fat||0, time:timeStr});
+      count++;
+    }
+  });
+
+  entry.consumed = entry.log.reduce((s,f)=>s+f.calories,0);
+  saveTodayCalorieEntry(entry); saveData();
+  selectedQuickPicks.clear();
+  renderQuickPicks(); renderFoodLog(); updateCalorieSummary();
+  showToast('🍽 ' + count + ' item(s) added!');
+}
+
+let allItemsOpen = false;
+function toggleAllItems() {
+  allItemsOpen = !allItemsOpen;
+  document.getElementById('allItemsArea').style.display = allItemsOpen ? 'block' : 'none';
+  document.getElementById('toggleAllItemsBtn').textContent = allItemsOpen ? '📦 All Items (tap to collapse)' : '📦 All Items (tap to expand)';
+  if (allItemsOpen) renderMyFoods();
+}
 
 function renderMyFoods() {
   const c = document.getElementById('myFoodsList'); selectedMyFoods.clear();
@@ -2395,10 +2583,10 @@ function renderMyFoods() {
     document.getElementById('addSelectedBtn').style.display = 'none'; return;
   }
   let h = '';
-  // Render My Meals first
+  // Render My Meals — sorted by frequency
   if (hasMeals) {
     h += '<div style="font-size:0.85rem;font-weight:700;color:var(--accent-blue);text-transform:uppercase;letter-spacing:1px;padding:8px 0 4px;margin-top:4px">🍱 My Meals</div>';
-    const sortedMeals = [...data.myMeals].sort((a,b) => a.name.localeCompare(b.name));
+    const sortedMeals = [...data.myMeals].sort((a,b) => (b.count||0) - (a.count||0));
     h += sortedMeals.map(m => {
       const health = getFoodHealth(m);
       const itemNames = (m.items||[]).map(i => i.name).join(', ');
@@ -2419,7 +2607,7 @@ function renderMyFoods() {
       {key:'red', label:'🔴 Consume Less', color:'var(--accent-red)'}
     ];
     for (const cat of categories) {
-      const foods = data.myFoods.filter(f => getFoodHealth(f) === cat.key).sort((a,b) => a.name.localeCompare(b.name));
+      const foods = data.myFoods.filter(f => getFoodHealth(f) === cat.key).sort((a,b) => (b.count||0) - (a.count||0));
       if (!foods.length) continue;
       h += '<div style="font-size:0.85rem;font-weight:700;color:'+cat.color+';text-transform:uppercase;letter-spacing:1px;padding:8px 0 4px;margin-top:4px">' + cat.label + '</div>';
       h += foods.map(f =>
@@ -2464,7 +2652,7 @@ function addSelectedMyFoods() {
   });
   entry.consumed = entry.log.reduce((s,f)=>s+f.calories,0);
   saveTodayCalorieEntry(entry); saveData();
-  selectedMyFoods.clear(); renderMyFoods(); renderFoodLog(); updateCalorieSummary();
+  selectedMyFoods.clear(); renderQuickPicks(); renderMyFoods(); renderFoodLog(); updateCalorieSummary();
   showToast('🍽 ' + count + ' item(s) added!');
 }
 
@@ -2527,8 +2715,9 @@ function refreshDashboard() {
   const progBar = document.getElementById('progressBar');
   if (progBar) progBar.style.width = Math.min(pct, 100) + '%';
   document.getElementById('lbsLost').textContent = Math.max(0, totalLost).toFixed(1);
-  // Goal pace indicator
-  const daysIn = daysBetween(data.startDate, today());
+  // Goal pace indicator — use goal's start date, not data.startDate
+  const goalStart = (data.goal && data.goal.startDate) || data.startDate;
+  const daysIn = daysBetween(goalStart, today());
   const expectedLoss = ((G('startWeight') - G('goalWeight')) / (G('goalWeeks') * 7)) * daysIn;
   const paceEl = document.getElementById('goalPace');
   if (paceEl) {
