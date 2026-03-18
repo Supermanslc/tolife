@@ -2116,11 +2116,12 @@ function renderWeightChart() {
   const sorted = allSorted.filter(w => w.date >= ninetyStr);
   // Update current day summary above chart
   const summaryEl = document.getElementById('weightChartSummary');
+  const goalStartDate = (data.goal && data.goal.startDate) || data.startDate;
   if (summaryEl && sorted.length) {
     const latest = sorted[sorted.length - 1];
-    const daysIn = daysBetween(data.startDate, today());
+    const daysIn = daysBetween(goalStartDate, today());
     const goalPerDay = (G('startWeight') - G('goalWeight')) / (G('goalWeeks') * 7);
-    const expectedWeight = Math.round((G('startWeight') - (goalPerDay * daysIn)) * 10) / 10;
+    const expectedWeight = Math.round(Math.max(G('goalWeight'), G('startWeight') - (goalPerDay * daysIn)) * 10) / 10;
     const avg7 = sorted.length >= 2 ? sorted.slice(-7).reduce((s,w) => s + w.weight, 0) / Math.min(sorted.length, 7) : latest.weight;
     summaryEl.innerHTML =
       '<div style="display:flex;justify-content:space-around;text-align:center">' +
@@ -2132,9 +2133,10 @@ function renderWeightChart() {
   const isLight = document.documentElement.hasAttribute('data-theme');
   const gridColor = isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)';
   const textColor = isLight ? '#57606a' : '#8b949e';
+  // v6.3: Goal line uses goal.startDate, not data.startDate
   const goalPoints = [];
   for (let i = 0; i <= G('goalWeeks') * 7; i += 7) {
-    const d = new Date(data.startDate); d.setDate(d.getDate() + i);
+    const d = new Date(goalStartDate); d.setDate(d.getDate() + i);
     goalPoints.push({ x: d.toISOString().split('T')[0], y: Math.round((G('startWeight') - ((G('startWeight') - G('goalWeight')) / (G('goalWeeks') * 7)) * i) * 10) / 10 });
   }
   const avgData = sorted.map((e, i) => {
@@ -2427,11 +2429,23 @@ function confirmSaveMeal() {
 let selectedMyFoods = new Set();
 let selectedQuickPicks = new Set();
 
-// v6.3: Get combined top items (meals + foods) by frequency
+// v6.3: Get combined top items (meals + foods) by frequency, only if used in last 10 days
 function getTopItems(limit) {
+  // Build a set of item names used in the last 10 days
+  const tenAgo = new Date(); tenAgo.setDate(tenAgo.getDate() - 10);
+  const tenAgoStr = tenAgo.getFullYear()+'-'+String(tenAgo.getMonth()+1).padStart(2,'0')+'-'+String(tenAgo.getDate()).padStart(2,'0');
+  const recentNames = new Set();
+  data.calories.filter(c => c.date >= tenAgoStr && c.log).forEach(c => {
+    c.log.forEach(item => recentNames.add(item.name.replace(/^🍱\s*/, '').trim().toLowerCase()));
+  });
+  // Also include recent workouts with saved templates
   const all = [];
-  if (data.myMeals) data.myMeals.forEach(m => all.push({...m, isMeal: true, freq: m.count || 0}));
-  if (data.myFoods) data.myFoods.forEach(f => all.push({...f, isMeal: false, freq: f.count || 0}));
+  if (data.myMeals) data.myMeals.forEach(m => {
+    if (recentNames.has(m.name.toLowerCase())) all.push({...m, isMeal: true, freq: m.count || 0});
+  });
+  if (data.myFoods) data.myFoods.forEach(f => {
+    if (recentNames.has(f.name.toLowerCase())) all.push({...f, isMeal: false, freq: f.count || 0});
+  });
   return all.sort((a, b) => b.freq - a.freq).slice(0, limit);
 }
 
