@@ -2491,6 +2491,7 @@ function renderQuickPicks() {
     const prefix = item.isMeal ? '🍱 ' : '';
     const label = prefix + item.name;
     return '<div class="quick-pill" id="qp-'+i+'" onclick="toggleQuickPick('+i+')" data-idx="'+i+'">' +
+      '<span class="pill-dot" style="color:' + (getFoodHealth(item)==='green'?'var(--accent-green)':getFoodHealth(item)==='red'?'var(--accent-red)':'var(--accent-orange)') + '">●</span>' +
       '<span>' + label + '</span> <span class="pill-cal">' + item.calories + '</span></div>';
   }).join('');
 
@@ -2503,6 +2504,7 @@ function renderQuickPicks() {
     yArea.style.display = 'block';
     yItems.innerHTML = yList.map((item, i) => {
       return '<div class="quick-pill" id="yp-'+i+'" onclick="toggleYesterdayPick('+i+')" data-idx="'+i+'">' +
+        '<span class="pill-dot" style="color:' + (getFoodHealth(item)==='green'?'var(--accent-green)':getFoodHealth(item)==='red'?'var(--accent-red)':'var(--accent-orange)') + '">●</span>' +
         '<span>' + item.name + '</span> <span class="pill-cal">' + item.calories + '</span></div>';
     }).join('');
     yItems._yList = yList;
