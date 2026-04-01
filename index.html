@@ -967,7 +967,7 @@ input[type="range"]::-webkit-slider-thumb {
     </div>
   </div>
   <div class="header-actions">
-    <span class="version-tag">v6.5</span>
+    <span class="version-tag">v6.8</span>
     <button class="data-btn" onclick="showDataModal()">💾</button>
     <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">☀️</button>
   </div>
@@ -981,26 +981,58 @@ input[type="range"]::-webkit-slider-thumb {
     <div class="nudge-title">💚 Gentle Reminder</div>
     <div id="nudgeText"></div>
   </div>
-  <div class="card">
-    <div class="progress-linear">
-      <div class="progress-linear-info">
-        <span class="progress-linear-lbs" id="lbsLost">0.0</span>
-        <span class="progress-linear-unit">lbs lost</span>
+  <div class="card" style="margin-bottom:10px">
+    <div style="display:flex;justify-content:space-around;align-items:center;margin-bottom:10px">
+      <div style="text-align:center">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:1.6rem;font-weight:700;color:var(--accent-green)" id="lbsLost">0.0</div>
+        <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.6px">lbs lost</div>
       </div>
-      <div class="progress-linear-bar-wrap">
-        <div class="progress-linear-bar-bg"><div class="progress-linear-bar-fill" id="progressBar" style="width:0%"></div></div>
-        <div class="progress-linear-label" id="goalSubtitle">Week 1 of 8 — 21.0 lbs to go</div>
+      <div style="width:1px;height:36px;background:var(--border)"></div>
+      <div style="text-align:center">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:1.6rem;font-weight:700;color:var(--accent-blue)" id="dashWeight">—</div>
+        <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.6px">lbs now</div>
+      </div>
+      <div style="width:1px;height:36px;background:var(--border)"></div>
+      <div style="text-align:center" id="dashBFHero">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:1.6rem;font-weight:700;color:var(--accent-orange)" id="dashBFPct">—</div>
+        <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.6px" id="dashBFLabel">body fat %</div>
       </div>
     </div>
-    <div style="font-size:0.9rem;margin-top:6px;font-weight:500" id="goalPace"></div>
+    <div style="margin-bottom:6px">
+      <div style="height:11px;background:var(--card-border);border-radius:7px;overflow:hidden">
+        <div id="progressBar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--accent-green),var(--accent-teal));border-radius:7px;transition:width 0.5s ease"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:4px">
+        <div style="font-size:0.75rem;color:var(--text-muted)" id="goalSubtitle">Week 1 of 8</div>
+        <div style="font-size:0.75rem;color:var(--text-muted)" id="goalPace"></div>
+      </div>
+    </div>
+    <div id="dashModeBadge" style="text-align:center;font-size:0.78rem;font-weight:600;color:var(--text-muted)"></div>
   </div>
-  <div id="dashModeBadge" style="text-align:center;padding:4px;font-size:0.85rem;font-weight:600"></div>
   <div id="dashShabbat" style="display:none;text-align:center;padding:8px;margin-bottom:8px;background:var(--bg-input);border-radius:12px;font-size:0.92rem;color:var(--accent-blue)">🕯️ Holiday Mode — Adjusted targets active, weekdays will compensate</div>
   <div class="stat-grid">
-    <div class="stat-card"><div class="stat-value stat-green" id="dashWeight">179.0</div><div class="stat-label">Current lbs</div></div>
+    <div class="stat-card"><div class="stat-value stat-green" id="dashWeight">—</div><div class="stat-label">Weight (lbs)</div></div>
     <div class="stat-card"><div class="stat-value stat-blue" id="dashCalBudget">—</div><div class="stat-label">Cal Budget</div></div>
     <div class="stat-card"><div class="stat-value stat-orange" id="dashStress">—</div><div class="stat-label">Stress</div></div>
-    <div class="stat-card"><div class="stat-value stat-purple" id="dashWorkout">—</div><div class="stat-label">Today's RPE</div></div>
+    <div class="stat-card"><div class="stat-value stat-purple" id="dashPhase">—</div><div class="stat-label">Phase</div></div>
+  </div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="font-size:0.88rem;font-weight:600;color:var(--text-secondary)">⛽ Daily Fuel Gauge</span>
+      <span class="stat-value stat-green" id="dashRemaining" style="font-size:1.1rem">—</span>
+    </div>
+    <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:6px">Budget + Exercise Credit (50%) − Consumed</div>
+    <div class="calorie-bar-container"><div class="calorie-bar" id="dashBalanceBar" style="width:0%"></div></div>
+    <div style="display:flex;justify-content:space-between;font-size:0.82rem;color:var(--text-muted);margin-top:4px">
+      <span style="color:var(--accent-teal);font-weight:700"><strong id="dashConsumedBar">0</strong> consumed</span>
+      <span style="color:var(--accent-orange);font-weight:700">🔥 <strong id="dashBurnedBar">0</strong> burned</span>
+      <span id="dashBalanceLabel">— remaining</span>
+    </div>
+    <div style="display:flex;justify-content:space-around;margin-top:10px;padding-top:10px;border-top:1px solid var(--card-border)" id="dashMacros">
+      <span style="font-size:0.88rem;color:var(--text-secondary)">🥩 <strong id="dashProtein">0</strong>g protein</span>
+      <span style="font-size:0.88rem;color:var(--text-secondary)">🍞 <strong id="dashCarbs">0</strong>g carbs</span>
+      <span style="font-size:0.88rem;color:var(--text-secondary)">🧈 <strong id="dashFat">0</strong>g fat</span>
+    </div>
   </div>
   <div id="dashBodyFatCard" style="display:none;background:var(--bg-card);border-radius:14px;padding:14px 16px;margin-bottom:12px;border:1px solid var(--border-color)">
     <div style="display:flex;align-items:center;justify-content:space-between">
@@ -1014,27 +1046,6 @@ input[type="range"]::-webkit-slider-thumb {
         <div style="font-size:0.82rem;color:var(--text-muted);margin-top:2px">Lean <strong id="dashLeanMass">—</strong> lbs · Fat <strong id="dashFatMass">—</strong> lbs</div>
       </div>
       <div id="dashBFIcon" style="font-size:2.8rem;line-height:1"></div>
-    </div>
-  </div>
-  <div class="stat-grid">
-    <div class="stat-card"><div class="stat-value stat-teal" id="dashConsumed">—</div><div class="stat-label">Cal Consumed</div></div>
-    <div class="stat-card"><div class="stat-value stat-orange" id="dashBurned">—</div><div class="stat-label">Cal Burned</div></div>
-  </div>
-  <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <span style="font-size:0.88rem;font-weight:600;color:var(--text-secondary)">⛽ Daily Fuel Gauge</span>
-      <span class="stat-value stat-green" id="dashRemaining" style="font-size:1.1rem">—</span>
-    </div>
-    <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:6px">Budget + Exercise Credit (50%) − Consumed</div>
-    <div class="calorie-bar-container"><div class="calorie-bar" id="dashBalanceBar" style="width:0%"></div></div>
-    <div style="display:flex;justify-content:space-between;font-size:0.82rem;color:var(--text-muted);margin-top:4px">
-      <span style="color:var(--accent-teal);font-weight:700"><strong id="dashConsumedBar">0</strong> cal consumed</span>
-      <span id="dashBalanceLabel">— remaining</span>
-    </div>
-    <div style="display:flex;justify-content:space-around;margin-top:10px;padding-top:10px;border-top:1px solid var(--card-border)" id="dashMacros">
-      <span style="font-size:0.88rem;color:var(--text-secondary)">🥩 <strong id="dashProtein">0</strong>g protein</span>
-      <span style="font-size:0.88rem;color:var(--text-secondary)">🍞 <strong id="dashCarbs">0</strong>g carbs</span>
-      <span style="font-size:0.88rem;color:var(--text-secondary)">🧈 <strong id="dashFat">0</strong>g fat</span>
     </div>
   </div>
   <div class="card">
@@ -1124,15 +1135,6 @@ input[type="range"]::-webkit-slider-thumb {
     <div style="display:flex;justify-content:space-between;font-size:0.82rem;color:var(--text-muted);margin-top:4px">
       <span id="macroSummary">🥩 0g protein · 🍞 0g carbs</span>
       <span id="calRemaining">— remaining</span>
-    </div>
-    <div class="form-group" style="margin-top:14px">
-      <label class="form-label">End-of-Day: How did you do?</label>
-      <div class="quick-select" id="adherenceSelect">
-        <button class="quick-btn" onclick="setAdherence('great')">😊 Great</button>
-        <button class="quick-btn" onclick="setAdherence('good')">✅ Good</button>
-        <button class="quick-btn" onclick="setAdherence('ok')">⚠️ OK</button>
-        <button class="quick-btn" onclick="setAdherence('poor')">❌ Poor</button>
-      </div>
     </div>
   </div>
 </div>
@@ -1335,7 +1337,7 @@ input[type="range"]::-webkit-slider-thumb {
   <button class="nav-item" onclick="showPage('Insights')"><span class="nav-icon">🧠</span><span>Insights</span></button>
 </nav>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script><script>
-// ===== ToLife! v6.5 — App Logic =====
+// ===== ToLife! v6.8 — App Logic =====
 // L'Chaim — to health, to strength
 
 const CONFIG = {
@@ -1455,43 +1457,49 @@ function calcNavyBodyFat(weightLbs, heightIn, waistIn, neckIn) {
 }
 
 function updateDashBodyFat() {
-  const card = document.getElementById('dashBodyFatCard');
-  if (!card) return;
+  const heroEl = document.getElementById('dashBFPct');
+  const labelEl = document.getElementById('dashBFLabel');
+  if (!heroEl) return;
   const p = data.profile;
-  if (!p || !p.waist || !p.neck) { card.style.display = 'none'; return; }
+  if (!p || !p.waist || !p.neck) {
+    heroEl.textContent = '—';
+    heroEl.style.color = 'var(--accent-orange)';
+    if (labelEl) labelEl.textContent = 'body fat %';
+    return;
+  }
   const w = getCurrentWeight();
   const bf = calcNavyBodyFat(w, p.height, p.waist, p.neck);
-  if (bf === null || bf < 3 || bf > 50) { card.style.display = 'none'; return; }
-  card.style.display = 'block';
+  if (bf === null || bf < 3 || bf > 50) {
+    heroEl.textContent = '—';
+    if (labelEl) labelEl.textContent = 'body fat %';
+    return;
+  }
   const leanMass = Math.round(w * (1 - bf / 100) * 10) / 10;
   const fatMass = Math.round(w * (bf / 100) * 10) / 10;
-  document.getElementById('dashBFPct').textContent = bf.toFixed(1);
-  document.getElementById('dashLeanMass').textContent = leanMass.toFixed(1);
-  document.getElementById('dashFatMass').textContent = fatMass.toFixed(1);
-  // Color, badge, icon by category (age-adjusted for 57yo male)
-  let color, badge, icon;
+  let color, icon;
   if (bf < 15) {
-    color = '#f0c040'; badge = '🏆 Athletic'; icon = '🏆';
-    document.getElementById('dashBFPct').style.color = '#f0c040';
+    color = '#f0c040'; icon = ' 🏆';
   } else if (bf < 18) {
-    color = '#2ea043'; badge = '✅ Fit'; icon = '💪';
-    document.getElementById('dashBFPct').style.color = '#2ea043';
+    color = '#2ea043'; icon = ' 💪';
   } else if (bf < 22) {
-    color = '#58a6ff'; badge = '📊 Normal'; icon = '👍';
-    document.getElementById('dashBFPct').style.color = '#58a6ff';
+    color = '#58a6ff'; icon = '';
   } else {
-    color = '#d29922'; badge = '⚠️ Above Fit'; icon = '📈';
-    document.getElementById('dashBFPct').style.color = '#d29922';
+    color = '#d29922'; icon = '';
   }
+  heroEl.textContent = bf.toFixed(1);
+  heroEl.style.color = color;
+  if (labelEl) labelEl.innerHTML = 'body fat %' + icon;
+  // Update lean/fat in the below-gauge card if still present
+  const leanEl = document.getElementById('dashLeanMass');
+  const fatEl = document.getElementById('dashFatMass');
   const badgeEl = document.getElementById('dashBFBadge');
-  badgeEl.textContent = badge;
-  badgeEl.style.background = color + '22';
-  badgeEl.style.color = color;
-  document.getElementById('dashBFIcon').textContent = icon;
+  if (leanEl) leanEl.textContent = leanMass.toFixed(1);
+  if (fatEl) fatEl.textContent = fatMass.toFixed(1);
+  if (badgeEl) { badgeEl.textContent = bf < 15 ? '🏆 Athletic' : bf < 18 ? '✅ Fit' : bf < 22 ? '📊 Normal' : '⚠️ Above Fit'; badgeEl.style.background = color + '22'; badgeEl.style.color = color; }
 }
 
 // ===== CALORIES BURNED ESTIMATION =====
-// v6.5: Realistic MET values, separate golf-walk/golf-cart/range
+// v6.8: Realistic MET values, separate golf-walk/golf-cart/range
 function estimateBurn(type, duration, rpe, weight, subtype) {
   const kg = weight * 0.453592;
   let met;
@@ -1531,7 +1539,7 @@ function estimateBurn(type, duration, rpe, weight, subtype) {
   return Math.round(cals * CONFIG.expendAdjust);
 }
 
-// v6.5: Only 50% of exercise calories count toward daily budget
+// v6.8: Only 50% of exercise calories count toward daily budget
 // This prevents the "eat back exercise" trap
 const EXERCISE_CREDIT_RATE = 0.50;
 
@@ -2123,7 +2131,7 @@ function updateWalkingEstimate() {
 function logWalking() {
   const steps = parseInt(document.getElementById('walkingSteps').value);
   if (!steps || steps < 100) { showToast('⚠️ Enter your steps'); return; }
-  // v6.5: Warn if golf already logged today (steps are included in golf calorie count)
+  // v6.8: Warn if golf already logged today (steps are included in golf calorie count)
   const todayGolf = data.workouts.filter(w => w.date === today() && ((w.note||'').toLowerCase().includes('golf') || (w.note||'').toLowerCase().includes('holes') || w.cardioSubtype === 'golf-walk' || w.cardioSubtype === 'golf-cart'));
   if (todayGolf.length > 0 && !confirm('⛳ You already logged golf today. Golf calorie estimates include the walking between shots. Log these steps separately only if they were OUTSIDE your golf round.')) return;
   const rpe = parseInt(document.getElementById('walkingRPE').value) || 2;
@@ -2357,7 +2365,7 @@ function renderWeightChart() {
   const isLight = document.documentElement.hasAttribute('data-theme');
   const gridColor = isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)';
   const textColor = isLight ? '#57606a' : '#8b949e';
-  // v6.5: Goal line uses goal.startDate, not data.startDate
+  // v6.8: Goal line uses goal.startDate, not data.startDate
   const goalPoints = [];
   for (let i = 0; i <= G('goalWeeks') * 7; i += 7) {
     const d = new Date(goalStartDate); d.setDate(d.getDate() + i);
@@ -2477,7 +2485,7 @@ async function callAI(food) {
 }
 
 function estimateLocally(desc) {
-  // v6.5: If user explicitly states calories (e.g. "150 calories yogurt"), use that number
+  // v6.8: If user explicitly states calories (e.g. "150 calories yogurt"), use that number
   const calMatch = desc.match(/(\d{2,4})\s*(?:cal|calories|kcal)/i);
   if (calMatch) {
     const stated = parseInt(calMatch[1]);
@@ -2703,7 +2711,7 @@ function confirmSaveMeal() {
 let selectedMyFoods = new Set();
 let selectedQuickPicks = new Set();
 
-// v6.5: Get combined top items (meals + foods) by frequency, only if used in last 10 days
+// v6.8: Get combined top items (meals + foods) by frequency, only if used in last 10 days
 function getTopItems(limit) {
   // Build a set of item names used in the last 10 days
   const tenAgo = new Date(); tenAgo.setDate(tenAgo.getDate() - 10);
@@ -2723,7 +2731,7 @@ function getTopItems(limit) {
   return all.sort((a, b) => b.freq - a.freq).slice(0, limit);
 }
 
-// v6.5: Get yesterday's food log items (minus those already in Quick Picks)
+// v6.8: Get yesterday's food log items (minus those already in Quick Picks)
 function getYesterdayItems(quickPickIds) {
   const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
   const yStr = yesterday.getFullYear()+'-'+String(yesterday.getMonth()+1).padStart(2,'0')+'-'+String(yesterday.getDate()).padStart(2,'0');
@@ -3048,12 +3056,23 @@ function refreshDashboard() {
     shabbatBadge.style.display = isActive ? 'block' : 'none';
   }
   const todayW = data.workouts.filter(x=>x.date===today());
-  document.getElementById('dashWorkout').textContent = todayW.length ? (todayW[todayW.length-1].type==='rest'?'Rest':todayW[todayW.length-1].rpe+'/10') : '—';
+  if (document.getElementById('dashWorkout')) document.getElementById('dashWorkout').textContent = todayW.length ? (todayW[todayW.length-1].type==='rest'?'Rest':todayW[todayW.length-1].rpe+'/10') : '—';
   const consumed = todayCal&&todayCal.log ? todayCal.log.reduce((s,f)=>s+f.calories,0) : 0;
-  document.getElementById('dashConsumed').textContent = consumed ? consumed.toLocaleString() : '—';
+  if (document.getElementById('dashConsumed')) document.getElementById('dashConsumed').textContent = consumed ? consumed.toLocaleString() : '—';
   if (document.getElementById('dashConsumedBar')) document.getElementById('dashConsumedBar').textContent = consumed.toLocaleString();
   const burned = getTodayBurned();
-  document.getElementById('dashBurned').textContent = burned ? burned.toLocaleString() : '—';
+  if (document.getElementById('dashBurned')) document.getElementById('dashBurned').textContent = burned ? burned.toLocaleString() : '—';
+  if (document.getElementById('dashBurnedBar')) document.getElementById('dashBurnedBar').textContent = burned ? burned.toLocaleString() : '0';
+  // Phase tile
+  const phaseEl = document.getElementById('dashPhase');
+  if (phaseEl) {
+    const phaseLabels = { cut: '✂️ Cut', maintain: '⚖️ Hold', build: '💪 Build' };
+    const phaseColors = { cut: 'var(--accent-orange)', maintain: 'var(--accent-green)', build: 'var(--accent-blue)' };
+    const ph = (data.goal && data.goal.phase) ? data.goal.phase : 'cut';
+    phaseEl.textContent = phaseLabels[ph] || '✂️ Cut';
+    phaseEl.style.color = phaseColors[ph] || 'var(--accent-orange)';
+    phaseEl.style.fontSize = '1rem';
+  }
   const exerciseCredit = getExerciseBudgetCredit();
   const budget = todayCal ? todayCal.target : calcTarget(w, 'moderate');
   const remaining = budget + exerciseCredit - consumed;
