@@ -967,7 +967,7 @@ input[type="range"]::-webkit-slider-thumb {
     </div>
   </div>
   <div class="header-actions">
-    <span class="version-tag">v6.9</span>
+    <span class="version-tag">v6.10</span>
     <button class="data-btn" onclick="showDataModal()">💾</button>
     <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">☀️</button>
   </div>
@@ -1337,7 +1337,7 @@ input[type="range"]::-webkit-slider-thumb {
   <button class="nav-item" onclick="showPage('Insights')"><span class="nav-icon">🧠</span><span>Insights</span></button>
 </nav>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script><script>
-// ===== ToLife! v6.9 — App Logic =====
+// ===== ToLife! v6.10 — App Logic =====
 // L'Chaim — to health, to strength
 
 const CONFIG = {
@@ -1499,7 +1499,7 @@ function updateDashBodyFat() {
 }
 
 // ===== CALORIES BURNED ESTIMATION =====
-// v6.9: Realistic MET values, separate golf-walk/golf-cart/range
+// v6.10: Realistic MET values, separate golf-walk/golf-cart/range
 function estimateBurn(type, duration, rpe, weight, subtype) {
   const kg = weight * 0.453592;
   let met;
@@ -1539,7 +1539,7 @@ function estimateBurn(type, duration, rpe, weight, subtype) {
   return Math.round(cals * CONFIG.expendAdjust);
 }
 
-// v6.9: Only 50% of exercise calories count toward daily budget
+// v6.10: Only 50% of exercise calories count toward daily budget
 // This prevents the "eat back exercise" trap
 const EXERCISE_CREDIT_RATE = 0.50;
 
@@ -2131,7 +2131,7 @@ function updateWalkingEstimate() {
 function logWalking() {
   const steps = parseInt(document.getElementById('walkingSteps').value);
   if (!steps || steps < 100) { showToast('⚠️ Enter your steps'); return; }
-  // v6.9: Warn if golf already logged today (steps are included in golf calorie count)
+  // v6.10: Warn if golf already logged today (steps are included in golf calorie count)
   const todayGolf = data.workouts.filter(w => w.date === today() && ((w.note||'').toLowerCase().includes('golf') || (w.note||'').toLowerCase().includes('holes') || w.cardioSubtype === 'golf-walk' || w.cardioSubtype === 'golf-cart'));
   if (todayGolf.length > 0 && !confirm('⛳ You already logged golf today. Golf calorie estimates include the walking between shots. Log these steps separately only if they were OUTSIDE your golf round.')) return;
   const rpe = parseInt(document.getElementById('walkingRPE').value) || 2;
@@ -2146,7 +2146,22 @@ function logWalking() {
   saveData();
   document.getElementById('walkingSteps').value = '';
   document.getElementById('walkingEstimate').textContent = '';
-  showToast('🚶 ' + steps.toLocaleString() + ' steps! ' + cals + ' cal (+' + Math.round(cals * EXERCISE_CREDIT_RATE) + ' to budget)');
+
+  // Auto-upgrade activity based on step count
+  let upgradeMsg = '';
+  if (steps >= 10000) {
+    const todayEntry = data.calories.find(c => c.date === today());
+    const actOrder = ['rest', 'light', 'moderate', 'intense'];
+    const currentAct = todayEntry ? todayEntry.activity : currentActivity;
+    if (actOrder.indexOf('moderate') > actOrder.indexOf(currentAct)) {
+      currentActivity = 'moderate';
+      if (todayEntry) { todayEntry.activity = 'moderate'; todayEntry.target = calcTarget(getCurrentWeight(), 'moderate'); saveData(); }
+      document.querySelectorAll('#activitySelect .quick-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('#activitySelect .quick-btn').forEach(b => { if (b.getAttribute('data-act') === 'moderate') b.classList.add('active'); });
+      upgradeMsg = ' · Activity → moderate (10k+ steps)';
+    }
+  }
+  showToast('🚶 ' + steps.toLocaleString() + ' steps! ' + cals + ' cal (+' + Math.round(cals * EXERCISE_CREDIT_RATE) + ' to budget)' + upgradeMsg);
   renderWorkoutHistory(); renderMyWorkouts(); refreshDashboard();
 }
 
@@ -2365,7 +2380,7 @@ function renderWeightChart() {
   const isLight = document.documentElement.hasAttribute('data-theme');
   const gridColor = isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)';
   const textColor = isLight ? '#57606a' : '#8b949e';
-  // v6.9: Goal line uses goal.startDate, not data.startDate
+  // v6.10: Goal line uses goal.startDate, not data.startDate
   const goalPoints = [];
   for (let i = 0; i <= G('goalWeeks') * 7; i += 7) {
     const d = new Date(goalStartDate); d.setDate(d.getDate() + i);
@@ -2485,7 +2500,7 @@ async function callAI(food) {
 }
 
 function estimateLocally(desc) {
-  // v6.9: If user explicitly states calories (e.g. "150 calories yogurt"), use that number
+  // v6.10: If user explicitly states calories (e.g. "150 calories yogurt"), use that number
   const calMatch = desc.match(/(\d{2,4})\s*(?:cal|calories|kcal)/i);
   if (calMatch) {
     const stated = parseInt(calMatch[1]);
@@ -2711,7 +2726,7 @@ function confirmSaveMeal() {
 let selectedMyFoods = new Set();
 let selectedQuickPicks = new Set();
 
-// v6.9: Get combined top items (meals + foods) by frequency, only if used in last 10 days
+// v6.10: Get combined top items (meals + foods) by frequency, only if used in last 10 days
 function getTopItems(limit) {
   // Build a set of item names used in the last 10 days
   const tenAgo = new Date(); tenAgo.setDate(tenAgo.getDate() - 10);
@@ -2731,7 +2746,7 @@ function getTopItems(limit) {
   return all.sort((a, b) => b.freq - a.freq).slice(0, limit);
 }
 
-// v6.9: Get yesterday's food log items (minus those already in Quick Picks)
+// v6.10: Get yesterday's food log items (minus those already in Quick Picks)
 function getYesterdayItems(quickPickIds) {
   const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
   const yStr = yesterday.getFullYear()+'-'+String(yesterday.getMonth()+1).padStart(2,'0')+'-'+String(yesterday.getDate()).padStart(2,'0');
