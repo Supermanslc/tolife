@@ -967,7 +967,7 @@ input[type="range"]::-webkit-slider-thumb {
     </div>
   </div>
   <div class="header-actions">
-    <span class="version-tag">v6.8</span>
+    <span class="version-tag">v6.9</span>
     <button class="data-btn" onclick="showDataModal()">💾</button>
     <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">☀️</button>
   </div>
@@ -989,7 +989,7 @@ input[type="range"]::-webkit-slider-thumb {
       </div>
       <div style="width:1px;height:36px;background:var(--border)"></div>
       <div style="text-align:center">
-        <div style="font-family:'JetBrains Mono',monospace;font-size:1.6rem;font-weight:700;color:var(--accent-blue)" id="dashWeight">—</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:1.6rem;font-weight:700;color:var(--accent-blue)" id="dashWeightHero">—</div>
         <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.6px">lbs now</div>
       </div>
       <div style="width:1px;height:36px;background:var(--border)"></div>
@@ -1337,7 +1337,7 @@ input[type="range"]::-webkit-slider-thumb {
   <button class="nav-item" onclick="showPage('Insights')"><span class="nav-icon">🧠</span><span>Insights</span></button>
 </nav>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script><script>
-// ===== ToLife! v6.8 — App Logic =====
+// ===== ToLife! v6.9 — App Logic =====
 // L'Chaim — to health, to strength
 
 const CONFIG = {
@@ -1499,7 +1499,7 @@ function updateDashBodyFat() {
 }
 
 // ===== CALORIES BURNED ESTIMATION =====
-// v6.8: Realistic MET values, separate golf-walk/golf-cart/range
+// v6.9: Realistic MET values, separate golf-walk/golf-cart/range
 function estimateBurn(type, duration, rpe, weight, subtype) {
   const kg = weight * 0.453592;
   let met;
@@ -1539,7 +1539,7 @@ function estimateBurn(type, duration, rpe, weight, subtype) {
   return Math.round(cals * CONFIG.expendAdjust);
 }
 
-// v6.8: Only 50% of exercise calories count toward daily budget
+// v6.9: Only 50% of exercise calories count toward daily budget
 // This prevents the "eat back exercise" trap
 const EXERCISE_CREDIT_RATE = 0.50;
 
@@ -1593,7 +1593,7 @@ function showPage(name) {
 }
 
 // ===== CHECK-IN =====
-let currentSleep = 0, currentActivity = 'moderate', currentAdherence = '';
+let currentSleep = 0, currentActivity = 'light', currentAdherence = '';
 
 function updateSlider(type) {
   const map = {
@@ -2131,7 +2131,7 @@ function updateWalkingEstimate() {
 function logWalking() {
   const steps = parseInt(document.getElementById('walkingSteps').value);
   if (!steps || steps < 100) { showToast('⚠️ Enter your steps'); return; }
-  // v6.8: Warn if golf already logged today (steps are included in golf calorie count)
+  // v6.9: Warn if golf already logged today (steps are included in golf calorie count)
   const todayGolf = data.workouts.filter(w => w.date === today() && ((w.note||'').toLowerCase().includes('golf') || (w.note||'').toLowerCase().includes('holes') || w.cardioSubtype === 'golf-walk' || w.cardioSubtype === 'golf-cart'));
   if (todayGolf.length > 0 && !confirm('⛳ You already logged golf today. Golf calorie estimates include the walking between shots. Log these steps separately only if they were OUTSIDE your golf round.')) return;
   const rpe = parseInt(document.getElementById('walkingRPE').value) || 2;
@@ -2365,7 +2365,7 @@ function renderWeightChart() {
   const isLight = document.documentElement.hasAttribute('data-theme');
   const gridColor = isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)';
   const textColor = isLight ? '#57606a' : '#8b949e';
-  // v6.8: Goal line uses goal.startDate, not data.startDate
+  // v6.9: Goal line uses goal.startDate, not data.startDate
   const goalPoints = [];
   for (let i = 0; i <= G('goalWeeks') * 7; i += 7) {
     const d = new Date(goalStartDate); d.setDate(d.getDate() + i);
@@ -2485,7 +2485,7 @@ async function callAI(food) {
 }
 
 function estimateLocally(desc) {
-  // v6.8: If user explicitly states calories (e.g. "150 calories yogurt"), use that number
+  // v6.9: If user explicitly states calories (e.g. "150 calories yogurt"), use that number
   const calMatch = desc.match(/(\d{2,4})\s*(?:cal|calories|kcal)/i);
   if (calMatch) {
     const stated = parseInt(calMatch[1]);
@@ -2711,7 +2711,7 @@ function confirmSaveMeal() {
 let selectedMyFoods = new Set();
 let selectedQuickPicks = new Set();
 
-// v6.8: Get combined top items (meals + foods) by frequency, only if used in last 10 days
+// v6.9: Get combined top items (meals + foods) by frequency, only if used in last 10 days
 function getTopItems(limit) {
   // Build a set of item names used in the last 10 days
   const tenAgo = new Date(); tenAgo.setDate(tenAgo.getDate() - 10);
@@ -2731,7 +2731,7 @@ function getTopItems(limit) {
   return all.sort((a, b) => b.freq - a.freq).slice(0, limit);
 }
 
-// v6.8: Get yesterday's food log items (minus those already in Quick Picks)
+// v6.9: Get yesterday's food log items (minus those already in Quick Picks)
 function getYesterdayItems(quickPickIds) {
   const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
   const yStr = yesterday.getFullYear()+'-'+String(yesterday.getMonth()+1).padStart(2,'0')+'-'+String(yesterday.getDate()).padStart(2,'0');
@@ -3028,19 +3028,19 @@ function refreshDashboard() {
   const refNote = data.referenceWeight && data.referenceWeight !== G('startWeight') ? ' (from ' + refW + ' lbs)' : '';
   document.getElementById('goalSubtitle').innerHTML = 'Week <strong>'+Math.min(weeksIn,G('goalWeeks'))+'</strong> of '+G('goalWeeks')+' — <strong>'+Math.max(0,toGo).toFixed(1)+'</strong> lbs to go' + refNote;
   document.getElementById('dashWeight').textContent = w.toFixed(1);
+  if (document.getElementById('dashWeightHero')) document.getElementById('dashWeightHero').textContent = w.toFixed(1);
   updateDashBodyFat();
   const todayCal = data.calories.find(c=>c.date===today());
   document.getElementById('dashCalBudget').textContent = todayCal ? todayCal.target.toLocaleString() : calcTarget(w,'moderate').toLocaleString();
   const todayCheckin = data.checkins.find(c=>c.date===today());
   document.getElementById('dashStress').textContent = todayCheckin ? todayCheckin.stress+'/10' : '—';
-  // Goal mode badge
+  // Goal mode badge — show deficit context below progress bar
   const modeBadge = document.getElementById('dashModeBadge');
   if (modeBadge) {
-    const g = getGoal();
-    const modeLabels = { loss: '🔥 Loss Mode · 750 cal/day deficit', maintain: '⚖️ Maintenance · 200 cal/day deficit', gain: '💪 Gain Mode · 300 cal/day surplus' };
-    const modeColors = { loss: 'var(--accent-orange)', maintain: 'var(--accent-green)', gain: 'var(--accent-blue)' };
-    modeBadge.textContent = modeLabels[g.mode];
-    modeBadge.style.color = modeColors[g.mode];
+    const deficit = G('deficitPerDay');
+    if (deficit < 0) { modeBadge.textContent = '+' + Math.abs(deficit) + ' cal/day surplus'; modeBadge.style.color = 'var(--accent-blue)'; }
+    else if (deficit <= 200) { modeBadge.textContent = deficit + ' cal/day deficit · near goal'; modeBadge.style.color = 'var(--accent-green)'; }
+    else { modeBadge.textContent = deficit + ' cal/day deficit'; modeBadge.style.color = 'var(--accent-orange)'; }
   }
   const shabbatBadge = document.getElementById('dashShabbat');
   if (shabbatBadge) {
@@ -3394,7 +3394,7 @@ function init() {
   const tw=data.weights.find(w=>w.date===today());
   if(tw){document.getElementById('checkinWeight').placeholder=tw.weight+' (logged)';} else {document.getElementById('checkinWeight').placeholder=getCurrentWeight().toFixed(1);}
   const tca=data.calories.find(c=>c.date===today());
-  if(tca){currentActivity=tca.activity||'light';currentAdherence=tca.adherence||'';} else {currentAdherence='';}
+  if(tca){currentActivity=tca.activity||'light';currentAdherence=tca.adherence||'';} else {currentActivity='light';currentAdherence='';}
   // Reset adherence button highlights for new day
   document.querySelectorAll('#adherenceSelect .quick-btn').forEach(b => b.classList.remove('active'));
   if(currentAdherence){
