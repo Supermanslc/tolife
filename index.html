@@ -957,6 +957,84 @@ input[type="range"]::-webkit-slider-thumb {
   color: var(--text-secondary);
   text-align: right;
 }
+/* ===== WEIGHT TRAINING PANEL ===== */
+#weightsPanel { display: none; margin-top: 10px; }
+#weightsPanel.visible { display: block; animation: fadeIn 0.3s ease; }
+
+.wt-exercise-dropdown { position: relative; margin-bottom: 10px; }
+.wt-dropdown-trigger {
+  width: 100%; padding: 10px 12px; background: var(--bg-input); border: 1px solid var(--border);
+  border-radius: var(--radius-xs); color: var(--text-primary); font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+  transition: border var(--transition);
+}
+.wt-dropdown-trigger:focus, .wt-dropdown-trigger.open { border-color: var(--border-focus); }
+.wt-dropdown-list {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 60; background: var(--bg-card);
+  border: 1px solid var(--border); border-radius: var(--radius-xs); margin-top: 4px;
+  max-height: 260px; overflow-y: auto; box-shadow: var(--shadow-lg);
+}
+.wt-dropdown-list .wt-cat-filter { display: flex; gap: 4px; padding: 8px; flex-wrap: wrap;
+  border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--bg-card); z-index: 2; }
+.wt-cat-btn { padding: 3px 8px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-input);
+  color: var(--text-muted); font-size: 0.75rem; font-weight: 600; cursor: pointer; font-family: 'DM Sans'; }
+.wt-cat-btn.active { background: var(--accent-green-soft); border-color: var(--accent-green); color: var(--accent-green); }
+.wt-ex-item { padding: 8px 12px; cursor: pointer; border-bottom: 1px solid var(--border); transition: background 0.15s; display: flex; justify-content: space-between; align-items: center; }
+.wt-ex-item:hover { background: var(--bg-card-hover); }
+.wt-ex-item:last-child { border-bottom: none; }
+.wt-ex-name { font-size: 0.88rem; font-weight: 500; }
+.wt-ex-last { font-size: 0.75rem; color: var(--text-muted); margin-top: 1px; }
+.wt-ex-cat { font-size: 0.7rem; font-weight: 600; padding: 2px 6px; border-radius: 4px; }
+
+.wt-stepper-row { display: flex; gap: 6px; margin-bottom: 10px; }
+.wt-stepper { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.wt-stepper.wide { flex: 1.4; }
+.wt-stepper-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 1px; color: var(--text-muted); text-transform: uppercase; }
+.wt-stepper-ctrl { display: flex; align-items: center; width: 100%; background: var(--bg-input);
+  border: 1px solid var(--border); border-radius: var(--radius-xs); overflow: hidden; }
+.wt-stepper-btn { width: 36px; height: 44px; border: none; background: transparent; color: var(--text-secondary);
+  font-size: 1.1rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent; user-select: none; flex-shrink: 0; }
+.wt-stepper-btn:active { background: var(--bg-card-hover); }
+.wt-stepper-val { flex: 1; text-align: center; font-family: 'JetBrains Mono'; font-weight: 700;
+  font-size: 1rem; color: var(--text-primary); white-space: nowrap; }
+.wt-stepper-unit { font-size: 0.65rem; color: var(--text-muted); margin-left: 1px; }
+
+.wt-overload { margin-bottom: 10px; }
+.wt-overload-title { font-size: 0.72rem; font-weight: 700; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; }
+.wt-overload-chips { display: flex; gap: 4px; flex-wrap: wrap; }
+.wt-overload-chip { padding: 6px 10px; border-radius: var(--radius-xs); border: 1px solid var(--border);
+  background: var(--bg-input); cursor: pointer; display: flex; align-items: center; gap: 5px; flex: 1;
+  font-family: 'DM Sans'; transition: all 0.15s; min-width: 0; }
+.wt-overload-chip:active { transform: scale(0.97); }
+.wt-overload-chip .chip-label { font-size: 0.78rem; font-weight: 700; }
+.wt-overload-chip .chip-detail { font-size: 0.68rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.wt-last-session { background: var(--accent-green-soft); border: 1px solid var(--accent-green); border-radius: var(--radius-xs);
+  padding: 8px 10px; margin-bottom: 10px; font-size: 0.85rem; }
+.wt-last-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 1px; color: var(--accent-green); text-transform: uppercase; margin-bottom: 2px; }
+
+.wt-session-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+.wt-session-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px;
+  background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-xs); font-size: 0.85rem; }
+.wt-session-item .wt-si-name { font-weight: 600; }
+.wt-session-item .wt-si-detail { color: var(--text-muted); font-size: 0.8rem; }
+.wt-session-item .wt-si-cal { font-family: 'JetBrains Mono'; font-weight: 600; color: var(--accent-orange); font-size: 0.8rem; }
+.wt-session-item .wt-si-remove { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.8rem; opacity: 0.5; }
+.wt-session-item .wt-si-remove:hover { opacity: 1; color: var(--accent-red); }
+
+.wt-routine-row { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 10px; }
+.wt-routine-btn { padding: 5px 10px; border-radius: 16px; border: 1px solid var(--border); background: var(--bg-input);
+  color: var(--text-secondary); font-size: 0.75rem; font-weight: 600; cursor: pointer; font-family: 'DM Sans';
+  transition: all 0.15s; white-space: nowrap; }
+.wt-routine-btn:active { transform: scale(0.96); }
+.wt-routine-btn.active { background: var(--accent-purple-soft); border-color: var(--accent-purple); color: var(--accent-purple); }
+
+.wt-cal-preview { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px;
+  background: var(--accent-orange-soft); border: 1px solid var(--accent-orange); border-radius: var(--radius-xs);
+  margin-bottom: 10px; font-size: 0.85rem; }
+.wt-cal-value { font-family: 'JetBrains Mono'; font-weight: 700; font-size: 1.1rem; color: var(--accent-orange); }
+
 </style></head><body>
 <header class="header">
   <div class="header-brand">
@@ -967,7 +1045,7 @@ input[type="range"]::-webkit-slider-thumb {
     </div>
   </div>
   <div class="header-actions">
-    <span class="version-tag">v7.0</span>
+    <span class="version-tag">v7.1</span>
     <button class="data-btn" onclick="showDataModal()">💾</button>
     <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">☀️</button>
   </div>
@@ -1213,6 +1291,43 @@ input[type="range"]::-webkit-slider-thumb {
         <button class="quick-btn" data-sub="" onclick="setCardioSubtype('')">🏷 Other</button>
       </div>
     </div>
+
+    <!-- WEIGHT TRAINING PANEL -->
+    <div id="weightsPanel">
+      <div class="form-group">
+        <label class="form-label">🏋️ Routine (optional)</label>
+        <div class="wt-routine-row" id="wtRoutineRow"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Exercise</label>
+        <div class="wt-exercise-dropdown" id="wtDropdownWrap">
+          <div class="wt-dropdown-trigger" id="wtDropdownTrigger" onclick="wtToggleDropdown()">
+            <span id="wtDropdownLabel" style="color:var(--text-muted)">Select an exercise...</span>
+            <span style="font-size:0.7rem;color:var(--text-muted)">▼</span>
+          </div>
+          <div class="wt-dropdown-list" id="wtDropdownList" style="display:none"></div>
+        </div>
+      </div>
+      <div id="wtLastSession"></div>
+      <div id="wtOverload"></div>
+      <div class="wt-stepper-row">
+        <div class="wt-stepper"><div class="wt-stepper-label">SETS</div>
+          <div class="wt-stepper-ctrl"><button class="wt-stepper-btn" onclick="wtStep('sets',-1)">−</button>
+          <div class="wt-stepper-val" id="wtSetsVal">0</div>
+          <button class="wt-stepper-btn" onclick="wtStep('sets',1)">+</button></div></div>
+        <div class="wt-stepper"><div class="wt-stepper-label">REPS</div>
+          <div class="wt-stepper-ctrl"><button class="wt-stepper-btn" onclick="wtStep('reps',-1)">−</button>
+          <div class="wt-stepper-val" id="wtRepsVal">0</div>
+          <button class="wt-stepper-btn" onclick="wtStep('reps',1)">+</button></div></div>
+        <div class="wt-stepper wide"><div class="wt-stepper-label">WEIGHT</div>
+          <div class="wt-stepper-ctrl"><button class="wt-stepper-btn" onclick="wtStep('weight',-2.5)">−</button>
+          <div class="wt-stepper-val" id="wtWeightVal">0<span class="wt-stepper-unit">lb</span></div>
+          <button class="wt-stepper-btn" onclick="wtStep('weight',2.5)">+</button></div></div>
+      </div>
+      <div id="wtCalPreview"></div>
+      <button class="btn-secondary" onclick="wtAddExercise()" style="margin-top:0;margin-bottom:10px;background:var(--accent-green-soft);border-color:var(--accent-green);color:var(--accent-green)">+ Add Exercise to Session</button>
+      <div id="wtSessionList" class="wt-session-list"></div>
+    </div>
     <div class="slider-group" id="rpeSection">
       <div class="slider-header"><span class="form-label" style="margin:0">💪 Effort (RPE)</span><span class="slider-value" id="rpeVal" style="color:var(--accent-purple)">5</span></div>
       <input type="range" id="rpeSlider" min="1" max="10" value="5" oninput="updateSlider('rpe')">
@@ -1380,7 +1495,8 @@ function getGoal() {
 
 let data = {
   weights: [], workouts: [], checkins: [], calories: [], myFoods: [], myWorkouts: [], myMeals: [],
-  goal: null, goalHistory: [], profile: null, referenceWeight: null, startDate: null
+  goal: null, goalHistory: [], profile: null, referenceWeight: null, startDate: null,
+  weightTraining: {}, weightRoutines: []
 };
 
 const STORAGE_KEY = 'tolife_data';
@@ -1411,6 +1527,8 @@ function sanityCheckGoal() {
 function loadData() {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved) { const p = JSON.parse(saved); data = { ...data, ...p }; if (!data.myFoods) data.myFoods = []; if (!data.myWorkouts) data.myWorkouts = []; if (!data.myMeals) data.myMeals = [];
+    if (!data.weightTraining) data.weightTraining = {};
+    if (!data.weightRoutines) data.weightRoutines = [];
     if (!data.goal) {
       const sw = data.weights&&data.weights.length ? [...data.weights].sort((a,b)=>a.date.localeCompare(b.date))[0].weight : 179;
       data.goal = { startWeight: sw, goalWeight: 158, goalWeeks: 8, startDate: data.startDate, mode: 'loss' };
@@ -1846,14 +1964,18 @@ function setWorkoutType(type) {
   const subtypeWrap = document.getElementById('cardioSubtypeWrap');
   if (subtypeWrap) subtypeWrap.style.display = type === 'cardio' ? 'block' : 'none';
   if (type !== 'cardio') currentCardioSubtype = '';
+  // Show/hide weights panel
+  const wp = document.getElementById('weightsPanel');
+  if (wp) { wp.style.display = type === 'weights' ? 'block' : 'none'; wp.classList.toggle('visible', type === 'weights'); }
   currentWorkoutType = type;
   document.querySelectorAll('#workoutTypeSelect .quick-btn').forEach(b => b.classList.remove('active'));
   event.currentTarget.classList.add('active');
   document.getElementById('durationSection').style.display = (type === 'cardio' || type === 'stretch') ? 'block' : 'none';
   document.getElementById('cardioFocusSection').style.display = type === 'cardio' ? 'block' : 'none';
-  document.getElementById('rpeSection').style.display = type === 'rest' ? 'none' : 'block';
-  document.getElementById('hrSection').style.display = type === 'rest' ? 'none' : 'block';
-  document.getElementById('burnSection').style.display = type === 'rest' ? 'none' : 'block';
+  document.getElementById('rpeSection').style.display = (type === 'rest' || type === 'weights') ? 'none' : 'block';
+  document.getElementById('hrSection').style.display = (type === 'rest' || type === 'weights') ? 'none' : 'block';
+  document.getElementById('burnSection').style.display = (type === 'rest' || type === 'weights') ? 'none' : 'block';
+  if (type === 'weights') { wtRenderRoutines(); wtRenderDropdown(); wtRenderSession(); }
   updateBurnEstimate();
 }
 
@@ -1874,6 +1996,61 @@ function setCardioFocus(focus) {
 
 function saveWorkout() {
   if (!currentWorkoutType) { showToast('⚠️ Select a workout type'); return; }
+
+  // For weights: use the session exercises list
+  if (currentWorkoutType === 'weights') {
+    if (wtSessionExercises.length === 0) { showToast('⚠️ Add at least one exercise'); return; }
+    const totalCals = wtSessionExercises.reduce((s, e) => s + e.calories, 0);
+    const avgRpe = Math.round(wtSessionExercises.length > 0 ? wtSessionExercises.reduce((s, e) => s + 6, 0) / wtSessionExercises.length : 5);
+    const noteStr = wtSessionExercises.map(e => e.name + ' ' + e.sets + '×' + e.reps + '@' + e.weight + 'lb').join(', ');
+    data.workouts.push({
+      date: today(), type: 'weights', rpe: avgRpe, duration: 0,
+      focus: '', hr: 0, note: noteStr, calsBurned: totalCals,
+      exercises: wtSessionExercises.map(e => ({...e}))
+    });
+    saveData();
+    // Save each exercise to weightTraining history
+    wtSessionExercises.forEach(ex => {
+      if (!data.weightTraining) data.weightTraining = {};
+      if (!data.weightTraining[ex.name]) data.weightTraining[ex.name] = [];
+      data.weightTraining[ex.name].unshift({ sets: ex.sets, reps: ex.reps, weight: ex.weight, calories: ex.calories, date: today() });
+      data.weightTraining[ex.name] = data.weightTraining[ex.name].slice(0, 20);
+    });
+    saveData();
+    // Auto-upgrade activity level
+    const todayEntry = data.calories.find(c => c.date === today());
+    const currentAct = todayEntry ? todayEntry.activity : currentActivity;
+    const actOrder = ['rest', 'light', 'moderate', 'intense'];
+    const currentIdx = actOrder.indexOf(currentAct);
+    const targetAct = 'moderate';
+    const targetIdx = actOrder.indexOf(targetAct);
+    let upgraded = false;
+    if (targetIdx > currentIdx) {
+      currentActivity = targetAct;
+      if (todayEntry) { todayEntry.activity = targetAct; todayEntry.target = calcTarget(getCurrentWeight(), targetAct); saveData(); }
+      upgraded = true;
+      document.querySelectorAll('#activitySelect .quick-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('#activitySelect .quick-btn').forEach(b => { if (b.getAttribute('data-act') === targetAct) b.classList.add('active'); });
+    }
+    const upgradeMsg = upgraded ? ' · Activity → ' + targetAct : '';
+    showToast('💪 ' + wtSessionExercises.length + ' exercises logged! ' + totalCals + ' cal (+' + Math.round(totalCals * EXERCISE_CREDIT_RATE) + ' to budget)' + upgradeMsg);
+    wtSessionExercises = [];
+    wtCurrentExercise = '';
+    wtSets = 0; wtReps = 0; wtWeight = 0;
+    wtActiveRoutine = null; wtRoutineQueue = []; wtQueueIndex = 0;
+    wtRenderSession(); wtRenderDropdown();
+    document.getElementById('wtDropdownLabel').textContent = 'Select an exercise...';
+    document.getElementById('wtDropdownLabel').style.color = 'var(--text-muted)';
+    document.getElementById('wtLastSession').innerHTML = '';
+    document.getElementById('wtOverload').innerHTML = '';
+    document.getElementById('wtCalPreview').innerHTML = '';
+    document.getElementById('wtSetsVal').textContent = '0';
+    document.getElementById('wtRepsVal').textContent = '0';
+    document.getElementById('wtWeightVal').innerHTML = '0<span class="wt-stepper-unit">lb</span>';
+    renderWorkoutHistory(); renderMyWorkouts(); refreshDashboard();
+    return;
+  }
+
   const rpe = currentWorkoutType !== 'rest' ? parseInt(document.getElementById('rpeSlider').value) : 0;
   const duration = parseInt(document.getElementById('workoutDuration').value) || 0;
   const manualBurn = parseInt(document.getElementById('workoutCalsBurned').value) || 0;
@@ -1940,7 +2117,14 @@ function renderWorkoutHistory() {
   c.innerHTML = recent.map((w, i) => {
     const ex = []; if (w.duration) ex.push(w.duration+'min'); if (w.hr) ex.push('❤️'+w.hr); if (w.focus) ex.push(w.focus==='fatburn'?'🔥 fat burn':'💓 intensity');
     if (w.calsBurned) ex.push('🔥'+w.calsBurned+' cal');
-    return '<div class="log-entry"><span class="log-date">'+formatDate(w.date)+'</span><div class="log-detail"><span class="log-badge '+badges[w.type]+'">'+labels[w.type]+'</span><span style="font-size:0.9rem;color:var(--text-secondary)">'+(ex.length?' · '+ex.join(' · '):'')+'</span>'+(w.note?'<div style="font-size:0.88rem;color:var(--text-muted);margin-top:2px">'+w.note+'</div>':'')+'</div>'+(w.type!=='rest'?'<span class="log-rpe" style="color:var(--accent-purple)">RPE '+w.rpe+'</span>':'')+'<button class="delete-btn" onclick="deleteWorkout('+i+')" title="Delete">×</button></div>';
+    // For weights with exercises array, show compact exercise list instead of note
+    let noteHtml = '';
+    if (w.type === 'weights' && w.exercises && w.exercises.length > 0) {
+      noteHtml = '<div style="font-size:0.8rem;color:var(--text-muted);margin-top:3px">' + w.exercises.map(e => e.name + ' ' + e.sets + '×' + e.reps + '@' + e.weight).join(' · ') + '</div>';
+    } else if (w.note) {
+      noteHtml = '<div style="font-size:0.88rem;color:var(--text-muted);margin-top:2px">' + w.note + '</div>';
+    }
+    return '<div class="log-entry"><span class="log-date">'+formatDate(w.date)+'</span><div class="log-detail"><span class="log-badge '+badges[w.type]+'">'+labels[w.type]+'</span><span style="font-size:0.9rem;color:var(--text-secondary)">'+(ex.length?' · '+ex.join(' · '):'')+'</span>'+noteHtml+'</div>'+(w.type!=='rest'?'<span class="log-rpe" style="color:var(--accent-purple)">RPE '+w.rpe+'</span>':'')+'<button class="delete-btn" onclick="deleteWorkout('+i+')" title="Delete">×</button></div>';
   }).join('');
 }
 
@@ -2066,6 +2250,231 @@ function removeMyWorkout(id) {
   }
 }
 
+
+// ===== WEIGHT TRAINING ENGINE =====
+const WT_EXERCISES = [
+  { name: 'Bicep Curl', met: 3.5, cat: 'Arms' }, { name: 'Tricep Extension', met: 3.5, cat: 'Arms' },
+  { name: 'Hammer Curl', met: 3.5, cat: 'Arms' }, { name: 'Skull Crusher', met: 3.5, cat: 'Arms' },
+  { name: 'Bench Press', met: 5.0, cat: 'Chest' }, { name: 'Incline Bench Press', met: 5.0, cat: 'Chest' },
+  { name: 'Chest Fly', met: 3.5, cat: 'Chest' }, { name: 'Push Up', met: 3.8, cat: 'Chest' },
+  { name: 'Squat', met: 6.0, cat: 'Legs' }, { name: 'Leg Press', met: 5.0, cat: 'Legs' },
+  { name: 'Lunges', met: 5.5, cat: 'Legs' }, { name: 'Leg Curl', met: 3.5, cat: 'Legs' },
+  { name: 'Leg Extension', met: 3.5, cat: 'Legs' }, { name: 'Calf Raise', met: 3.0, cat: 'Legs' },
+  { name: 'Deadlift', met: 6.0, cat: 'Back' }, { name: 'Bent Over Row', met: 5.0, cat: 'Back' },
+  { name: 'Lat Pulldown', met: 4.5, cat: 'Back' }, { name: 'Seated Row', met: 4.5, cat: 'Back' },
+  { name: 'Shoulder Press', met: 5.0, cat: 'Shoulders' }, { name: 'Lateral Raise', met: 3.5, cat: 'Shoulders' },
+  { name: 'Front Raise', met: 3.5, cat: 'Shoulders' }, { name: 'Face Pull', met: 3.0, cat: 'Shoulders' },
+  { name: 'Plank', met: 3.8, cat: 'Core' }, { name: 'Crunch', met: 3.0, cat: 'Core' },
+  { name: 'Russian Twist', met: 3.5, cat: 'Core' }, { name: 'Cable Woodchop', met: 4.0, cat: 'Core' },
+];
+
+const WT_DEFAULT_ROUTINES = [
+  { id: 'r1', name: 'Back & Biceps', exercises: ['Deadlift','Bent Over Row','Lat Pulldown','Seated Row','Bicep Curl','Hammer Curl'] },
+  { id: 'r2', name: 'Chest & Triceps', exercises: ['Bench Press','Incline Bench Press','Chest Fly','Tricep Extension','Skull Crusher','Shoulder Press','Lateral Raise'] },
+  { id: 'r3', name: 'Leg Day', exercises: ['Squat','Leg Press','Lunges','Leg Curl','Leg Extension','Calf Raise'] },
+  { id: 'r4', name: 'Push Day', exercises: ['Bench Press','Shoulder Press','Incline Bench Press','Lateral Raise','Tricep Extension','Push Up'] },
+  { id: 'r5', name: 'Pull Day', exercises: ['Deadlift','Bent Over Row','Lat Pulldown','Seated Row','Face Pull','Bicep Curl'] },
+];
+
+let wtCurrentExercise = '', wtSets = 0, wtReps = 0, wtWeight = 0;
+let wtSessionExercises = [];
+let wtDropdownOpen = false, wtCatFilter = 'All';
+let wtActiveRoutine = null, wtRoutineQueue = [], wtQueueIndex = 0;
+let wtLastClick = 0;
+
+function wtEstCal(ex, sets, reps, wt) {
+  const bw = (getCurrentWeight() || 170) * 0.453592;
+  const mins = (sets * reps * 3) / 60;
+  const wf = 1 + (wt * 0.453592) / bw * 0.3;
+  return Math.round((ex.met * bw * mins) / 60 * wf * CONFIG.expendAdjust);
+}
+
+function wtStep(field, delta) {
+  const now = Date.now();
+  if (now - wtLastClick < 150) return;
+  wtLastClick = now;
+  if (field === 'sets') { wtSets = Math.max(0, wtSets + delta); document.getElementById('wtSetsVal').textContent = wtSets; }
+  else if (field === 'reps') { wtReps = Math.max(0, wtReps + delta); document.getElementById('wtRepsVal').textContent = wtReps; }
+  else if (field === 'weight') { wtWeight = Math.max(0, Math.round((wtWeight + delta) * 10) / 10); document.getElementById('wtWeightVal').innerHTML = (wtWeight % 1 === 0 ? wtWeight : wtWeight.toFixed(1)) + '<span class="wt-stepper-unit">lb</span>'; }
+  wtUpdateCalPreview();
+}
+
+function wtUpdateCalPreview() {
+  const el = document.getElementById('wtCalPreview');
+  const ex = WT_EXERCISES.find(e => e.name === wtCurrentExercise);
+  if (!ex || wtSets <= 0 || wtReps <= 0 || wtWeight <= 0) { el.innerHTML = ''; return; }
+  const cal = wtEstCal(ex, wtSets, wtReps, wtWeight);
+  el.innerHTML = '<div class="wt-cal-preview"><span style="color:var(--text-secondary)">Est. burn</span><span class="wt-cal-value">' + cal + ' <span style="font-size:0.7rem">kcal</span></span></div>';
+}
+
+function wtSelectExercise(name) {
+  wtCurrentExercise = name;
+  wtDropdownOpen = false;
+  document.getElementById('wtDropdownList').style.display = 'none';
+  document.getElementById('wtDropdownTrigger').classList.remove('open');
+  const ex = WT_EXERCISES.find(e => e.name === name);
+  document.getElementById('wtDropdownLabel').textContent = name;
+  document.getElementById('wtDropdownLabel').style.color = 'var(--text-primary)';
+  // Auto-fill from history
+  const hist = (data.weightTraining || {})[name] || [];
+  if (hist.length > 0) {
+    wtSets = hist[0].sets; wtReps = hist[0].reps; wtWeight = hist[0].weight;
+  } else { wtSets = 0; wtReps = 0; wtWeight = 0; }
+  document.getElementById('wtSetsVal').textContent = wtSets;
+  document.getElementById('wtRepsVal').textContent = wtReps;
+  document.getElementById('wtWeightVal').innerHTML = (wtWeight % 1 === 0 ? wtWeight : wtWeight.toFixed(1)) + '<span class="wt-stepper-unit">lb</span>';
+  wtRenderLastSession(name, hist);
+  wtRenderOverload(name, hist, ex);
+  wtUpdateCalPreview();
+}
+
+function wtToggleDropdown() {
+  wtDropdownOpen = !wtDropdownOpen;
+  document.getElementById('wtDropdownList').style.display = wtDropdownOpen ? 'block' : 'none';
+  document.getElementById('wtDropdownTrigger').classList.toggle('open', wtDropdownOpen);
+  if (wtDropdownOpen) wtRenderDropdown();
+}
+
+function wtRenderDropdown() {
+  const list = document.getElementById('wtDropdownList');
+  const cats = ['All', ...new Set(WT_EXERCISES.map(e => e.cat))];
+  const filtered = wtCatFilter === 'All' ? WT_EXERCISES : WT_EXERCISES.filter(e => e.cat === wtCatFilter);
+  let html = '<div class="wt-cat-filter">';
+  cats.forEach(c => { html += '<button class="wt-cat-btn' + (wtCatFilter === c ? ' active' : '') + '" onclick="event.stopPropagation();wtCatFilter=\'' + c + '\';wtRenderDropdown()">' + c + '</button>'; });
+  html += '</div>';
+  filtered.forEach(ex => {
+    const prev = ((data.weightTraining || {})[ex.name] || [])[0];
+    const lastStr = prev ? '<div class="wt-ex-last">Last: ' + prev.sets + '×' + prev.reps + ' @ ' + prev.weight + ' lbs</div>' : '';
+    html += '<div class="wt-ex-item" onclick="wtSelectExercise(\'' + ex.name.replace(/'/g, "\\'") + '\')"><div><div class="wt-ex-name">' + ex.name + '</div>' + lastStr + '</div><span class="wt-ex-cat" style="color:var(--accent-teal);background:var(--accent-teal-soft)">' + ex.cat + '</span></div>';
+  });
+  list.innerHTML = html;
+}
+
+function wtRenderLastSession(name, hist) {
+  const el = document.getElementById('wtLastSession');
+  if (!hist || hist.length === 0) { el.innerHTML = ''; return; }
+  el.innerHTML = '<div class="wt-last-session"><div class="wt-last-label">Last session</div><div>' + hist[0].sets + '×' + hist[0].reps + ' @ ' + hist[0].weight + ' lbs <span style="color:var(--text-muted);font-size:0.8rem;margin-left:6px">' + hist[0].calories + ' kcal</span></div></div>';
+}
+
+function wtRenderOverload(name, hist, exercise) {
+  const el = document.getElementById('wtOverload');
+  if (!hist || hist.length === 0) { el.innerHTML = ''; return; }
+  const last = hist[0];
+  const compound = ['Bench Press','Incline Bench Press','Squat','Deadlift','Shoulder Press','Bent Over Row','Leg Press','Lunges'].includes(name);
+  const sameWt = hist.filter(h => h.weight === last.weight).length;
+  const sug = [];
+  if (sameWt >= 3) { const b = compound ? 5 : 2.5; sug.push({ label: '+' + b + ' lbs', detail: 'Hit ' + last.weight + ' lbs ' + sameWt + 'x', sets: last.sets, reps: Math.max(last.reps - 2, 5), weight: last.weight + b, color: 'var(--accent-orange)' }); }
+  if (last.reps < (compound ? 12 : 15)) sug.push({ label: '+2 reps', detail: last.sets + '×' + (last.reps + 2) + ' @ ' + last.weight, sets: last.sets, reps: last.reps + 2, weight: last.weight, color: 'var(--accent-blue)' });
+  if (last.sets < 6) sug.push({ label: '+1 set', detail: (last.sets + 1) + '×' + last.reps + ' @ ' + last.weight, sets: last.sets + 1, reps: last.reps, weight: last.weight, color: 'var(--accent-purple)' });
+  if (sug.length === 0) { const b = compound ? 5 : 2.5; sug.push({ label: '+' + b + ' lbs', detail: 'Try ' + (last.weight + b), sets: last.sets, reps: last.reps, weight: last.weight + b, color: 'var(--accent-orange)' }); }
+  let html = '<div class="wt-overload"><div class="wt-overload-title">Progressive Overload</div><div class="wt-overload-chips">';
+  sug.slice(0, 3).forEach(s => {
+    html += '<div class="wt-overload-chip" onclick="wtApplySuggestion(' + s.sets + ',' + s.reps + ',' + s.weight + ')" style="border-color:' + s.color + '"><div><div class="chip-label" style="color:' + s.color + '">' + s.label + '</div><div class="chip-detail">' + s.detail + '</div></div></div>';
+  });
+  html += '</div></div>';
+  el.innerHTML = html;
+}
+
+function wtApplySuggestion(sets, reps, weight) {
+  wtSets = sets; wtReps = reps; wtWeight = weight;
+  document.getElementById('wtSetsVal').textContent = wtSets;
+  document.getElementById('wtRepsVal').textContent = wtReps;
+  document.getElementById('wtWeightVal').innerHTML = (wtWeight % 1 === 0 ? wtWeight : wtWeight.toFixed(1)) + '<span class="wt-stepper-unit">lb</span>';
+  wtUpdateCalPreview();
+}
+
+function wtAddExercise() {
+  const ex = WT_EXERCISES.find(e => e.name === wtCurrentExercise);
+  if (!ex || wtSets <= 0 || wtReps <= 0 || wtWeight <= 0) { showToast('⚠️ Select exercise & set values'); return; }
+  const cal = wtEstCal(ex, wtSets, wtReps, wtWeight);
+  wtSessionExercises.push({ name: ex.name, cat: ex.cat, sets: wtSets, reps: wtReps, weight: wtWeight, calories: cal });
+  wtRenderSession();
+  showToast('✅ ' + ex.name + ' added');
+  // Advance routine queue if active
+  if (wtActiveRoutine && wtQueueIndex < wtRoutineQueue.length - 1) {
+    wtQueueIndex++;
+    wtSelectExercise(wtRoutineQueue[wtQueueIndex]);
+  } else if (wtActiveRoutine && wtQueueIndex >= wtRoutineQueue.length - 1) {
+    wtActiveRoutine = null; wtRoutineQueue = []; wtQueueIndex = 0;
+    wtCurrentExercise = '';
+    document.getElementById('wtDropdownLabel').textContent = 'Select an exercise...';
+    document.getElementById('wtDropdownLabel').style.color = 'var(--text-muted)';
+    document.getElementById('wtLastSession').innerHTML = '';
+    document.getElementById('wtOverload').innerHTML = '';
+    document.getElementById('wtCalPreview').innerHTML = '';
+    document.getElementById('wtSetsVal').textContent = '0';
+    document.getElementById('wtRepsVal').textContent = '0';
+    document.getElementById('wtWeightVal').innerHTML = '0<span class="wt-stepper-unit">lb</span>';
+    wtRenderRoutines();
+    showToast('🎉 Routine complete! Hit Log Workout to save');
+  } else {
+    wtCurrentExercise = '';
+    document.getElementById('wtDropdownLabel').textContent = 'Select an exercise...';
+    document.getElementById('wtDropdownLabel').style.color = 'var(--text-muted)';
+    document.getElementById('wtLastSession').innerHTML = '';
+    document.getElementById('wtOverload').innerHTML = '';
+    document.getElementById('wtCalPreview').innerHTML = '';
+    wtSets = 0; wtReps = 0; wtWeight = 0;
+    document.getElementById('wtSetsVal').textContent = '0';
+    document.getElementById('wtRepsVal').textContent = '0';
+    document.getElementById('wtWeightVal').innerHTML = '0<span class="wt-stepper-unit">lb</span>';
+  }
+}
+
+function wtRemoveSessionExercise(idx) {
+  wtSessionExercises.splice(idx, 1);
+  wtRenderSession();
+}
+
+function wtRenderSession() {
+  const el = document.getElementById('wtSessionList');
+  if (wtSessionExercises.length === 0) { el.innerHTML = ''; return; }
+  const totalCal = wtSessionExercises.reduce((s, e) => s + e.calories, 0);
+  let html = '<div style="font-size:0.72rem;font-weight:700;letter-spacing:1px;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase">Session (' + wtSessionExercises.length + ' exercises · ' + totalCal + ' kcal)</div>';
+  wtSessionExercises.forEach((ex, i) => {
+    html += '<div class="wt-session-item"><div><span class="wt-si-name">' + ex.name + '</span><div class="wt-si-detail">' + ex.sets + ' sets · ' + ex.reps + ' reps · ' + ex.weight + ' lbs</div></div><div style="display:flex;align-items:center;gap:8px"><span class="wt-si-cal">' + ex.calories + '</span><button class="wt-si-remove" onclick="wtRemoveSessionExercise(' + i + ')">×</button></div></div>';
+  });
+  el.innerHTML = html;
+}
+
+function wtRenderRoutines() {
+  const routines = (data.weightRoutines && data.weightRoutines.length > 0) ? data.weightRoutines : WT_DEFAULT_ROUTINES;
+  const el = document.getElementById('wtRoutineRow');
+  let html = '';
+  routines.forEach(r => {
+    const isActive = wtActiveRoutine && wtActiveRoutine.id === r.id;
+    html += '<button class="wt-routine-btn' + (isActive ? ' active' : '') + '" onclick="wtStartRoutine(\'' + r.id + '\')">' + r.name + '</button>';
+  });
+  el.innerHTML = html;
+}
+
+function wtStartRoutine(id) {
+  const routines = (data.weightRoutines && data.weightRoutines.length > 0) ? data.weightRoutines : WT_DEFAULT_ROUTINES;
+  const routine = routines.find(r => r.id === id);
+  if (!routine) return;
+  if (wtActiveRoutine && wtActiveRoutine.id === id) {
+    // Deactivate
+    wtActiveRoutine = null; wtRoutineQueue = []; wtQueueIndex = 0;
+    wtRenderRoutines();
+    return;
+  }
+  wtActiveRoutine = routine;
+  wtRoutineQueue = routine.exercises;
+  wtQueueIndex = 0;
+  wtRenderRoutines();
+  wtSelectExercise(wtRoutineQueue[0]);
+  showToast('🏋️ ' + routine.name + ' started!');
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('mousedown', function(e) {
+  const wrap = document.getElementById('wtDropdownWrap');
+  if (wrap && !wrap.contains(e.target) && wtDropdownOpen) {
+    wtDropdownOpen = false;
+    document.getElementById('wtDropdownList').style.display = 'none';
+    document.getElementById('wtDropdownTrigger').classList.remove('open');
+  }
+});
 
 // ===== FOOD HEALTH CATEGORIES =====
 function getFoodHealth(food) {
