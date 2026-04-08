@@ -1112,6 +1112,32 @@ input[type="range"]::-webkit-slider-thumb {
       <span style="font-size:0.88rem;color:var(--text-secondary)">🧈 <strong id="dashFat">0</strong>g fat</span>
     </div>
   </div>
+  <!-- Dashboard Miles Tracker -->
+  <div class="card" id="dashMilesCard" style="padding:12px 14px">
+    <div style="display:flex;justify-content:space-around;text-align:center;margin-bottom:8px">
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:1.5rem;font-weight:700;color:var(--accent-blue)" id="dashMilesTotal">0.0</div>
+        <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.6px">miles logged</div>
+      </div>
+      <div style="width:1px;height:36px;background:var(--border)"></div>
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:1.5rem;font-weight:700;color:var(--accent-teal)" id="dashMilesPace">0.00</div>
+        <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.6px">mi/wk pace</div>
+      </div>
+      <div style="width:1px;height:36px;background:var(--border)"></div>
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:1.5rem;font-weight:700;color:var(--accent-orange)" id="dashMilesToGo">0.0</div>
+        <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.6px">mi to goal</div>
+      </div>
+    </div>
+    <div style="height:8px;background:var(--card-border);border-radius:4px;overflow:hidden">
+      <div id="dashMilesBar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--accent-blue),var(--accent-teal));border-radius:4px;transition:width 0.5s ease"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:3px">
+      <div style="font-size:0.72rem;color:var(--text-muted)" id="dashMilesBarLabel">0.0 / 300.0 miles</div>
+      <div style="font-size:0.72rem;color:var(--text-muted)">🏃 2026</div>
+    </div>
+  </div>
   <div id="dashBodyFatCard" style="display:none;background:var(--bg-card);border-radius:14px;padding:14px 16px;margin-bottom:12px;border:1px solid var(--border-color)">
     <div style="display:flex;align-items:center;justify-content:space-between">
       <div>
@@ -1330,7 +1356,15 @@ input[type="range"]::-webkit-slider-thumb {
     </div>
     <div class="form-group" id="distanceSection" style="display:none">
       <label class="form-label">📏 Distance (miles)</label>
-      <input type="number" step="0.1" class="form-input" id="workoutDistance" placeholder="e.g., 6.5">
+      <div style="display:flex;gap:8px;align-items:flex-start">
+        <div style="flex:1">
+          <input type="number" step="0.1" class="form-input" id="workoutDistance" placeholder="e.g., 6.5">
+        </div>
+        <div id="bikeDisplayCalWrap" style="flex:1;display:none">
+          <input type="number" class="form-input" id="bikeDisplayCal" placeholder="Display cal" oninput="updateBurnEstimate()">
+          <div style="font-size:0.75rem;color:var(--text-muted);margin-top:2px">From bike display</div>
+        </div>
+      </div>
       <div style="font-size:0.82rem;color:var(--text-muted);margin-top:4px">Bike miles count as ½ run-equivalent. Run miles count 1:1.</div>
     </div>
     <div class="slider-group" id="rpeSection">
@@ -1457,7 +1491,7 @@ input[type="range"]::-webkit-slider-thumb {
       <div style="flex:1"><label class="form-label">🎯 Year Goal (miles)</label>
         <input type="number" step="0.1" class="form-input" id="milesGoalInput" value="300.0" style="text-align:center"></div>
       <div style="flex:1"><label class="form-label">📌 Baseline Offset</label>
-        <input type="number" step="0.1" class="form-input" id="milesBaselineInput" value="48.9" style="text-align:center"></div>
+        <input type="number" step="0.1" class="form-input" id="milesBaselineInput" value="49.9" style="text-align:center"></div>
     </div>
     <div style="font-size:0.82rem;color:var(--text-muted);margin-top:4px">Baseline = miles from before tracking started. Bike ÷ 2 + Run 1:1 + 10K-step days = 1 mile each.</div>
     <button class="btn-secondary" onclick="saveMilesSettings()" style="margin-top:8px;font-size:0.82rem;padding:8px">Update Miles Settings</button>
@@ -1991,6 +2025,9 @@ function setCardioSubtype(sub) {
   // Show distance field for bike/run
   const distSec = document.getElementById('distanceSection');
   if (distSec) distSec.style.display = (sub === 'bike' || sub === 'run') ? 'block' : 'none';
+  // Show bike display cal field only for bike
+  const bikeCal = document.getElementById('bikeDisplayCalWrap');
+  if (bikeCal) bikeCal.style.display = sub === 'bike' ? 'block' : 'none';
   // Update burn estimate
   updateBurnEstimate();
 }
@@ -2019,9 +2056,14 @@ function updateBurnEstimate() {
   if (!currentWorkoutType || currentWorkoutType === 'rest') { document.getElementById('burnEstimate').textContent = ''; return; }
   const rpe = parseInt(document.getElementById('rpeSlider').value) || 5;
   const duration = parseInt(document.getElementById('workoutDuration').value) || 0;
+  const bikeDisplayCal = parseInt(document.getElementById('bikeDisplayCal').value) || 0;
   const w = getCurrentWeight();
   const est = estimateBurn(currentWorkoutType, duration, rpe, w, currentCardioSubtype);
-  document.getElementById('burnEstimate').textContent = 'AI estimate: ~' + est + ' cal (50% = ' + Math.round(est * EXERCISE_CREDIT_RATE) + ' added to budget)';
+  if (bikeDisplayCal > 0) {
+    document.getElementById('burnEstimate').textContent = 'Bike display: ' + bikeDisplayCal + ' cal (50% = ' + Math.round(bikeDisplayCal * EXERCISE_CREDIT_RATE) + ' added to budget)';
+  } else {
+    document.getElementById('burnEstimate').textContent = 'AI estimate: ~' + est + ' cal (50% = ' + Math.round(est * EXERCISE_CREDIT_RATE) + ' added to budget)';
+  }
 }
 
 function setCardioFocus(focus) {
@@ -2090,8 +2132,10 @@ function saveWorkout() {
   const rpe = currentWorkoutType !== 'rest' ? parseInt(document.getElementById('rpeSlider').value) : 0;
   const duration = parseInt(document.getElementById('workoutDuration').value) || 0;
   const manualBurn = parseInt(document.getElementById('workoutCalsBurned').value) || 0;
+  const bikeDisplayCal = parseInt(document.getElementById('bikeDisplayCal').value) || 0;
+  const effectiveManualBurn = bikeDisplayCal > 0 ? bikeDisplayCal : manualBurn;
   const w = getCurrentWeight();
-  const calsBurned = manualBurn > 0 ? manualBurn : estimateBurn(currentWorkoutType, duration, rpe, w, currentCardioSubtype);
+  const calsBurned = effectiveManualBurn > 0 ? effectiveManualBurn : estimateBurn(currentWorkoutType, duration, rpe, w, currentCardioSubtype);
 
   const distance = parseFloat(document.getElementById('workoutDistance').value) || 0;
 
@@ -2134,6 +2178,7 @@ function saveWorkout() {
     document.getElementById('workoutNote').value = '';
     document.getElementById('workoutCalsBurned').value = '';
     document.getElementById('workoutDistance').value = '';
+    document.getElementById('bikeDisplayCal').value = '';
     const upgradeMsg = upgraded ? ` · Activity → ${targetAct}` : '';
     showToast('💪 Workout logged! ' + calsBurned + ' cal burned (+' + Math.round(calsBurned * EXERCISE_CREDIT_RATE) + ' to budget)' + upgradeMsg);
   } else {
@@ -2142,6 +2187,7 @@ function saveWorkout() {
     document.getElementById('workoutNote').value = '';
     document.getElementById('workoutCalsBurned').value = '';
     document.getElementById('workoutDistance').value = '';
+    document.getElementById('bikeDisplayCal').value = '';
     showToast('💪 Workout logged! ' + calsBurned + ' cal burned (+' + Math.round(calsBurned * EXERCISE_CREDIT_RATE) + ' to budget)');
   }
   renderWorkoutHistory(); renderMyWorkouts(); refreshDashboard();
@@ -2926,9 +2972,32 @@ function renderBfTrendChart() {
   });
 }
 // ===== MILES TRACKER =====
+function updateDashMiles() {
+  const settings = getMilesSettings();
+  const calc = calcMilesFromWorkouts();
+  const totalMiles = Math.round((settings.baseline + calc.calculatedTotal) * 10) / 10;
+  const remaining = Math.round(Math.max(0, settings.goal - totalMiles) * 10) / 10;
+  const pct = Math.min(100, (totalMiles / settings.goal) * 100);
+  const now = new Date();
+  const eoy = new Date(now.getFullYear(), 11, 31);
+  const weeksLeft = Math.max(0.1, (eoy - now) / (7 * 24 * 60 * 60 * 1000));
+  const paceNeeded = remaining > 0 ? (remaining / weeksLeft) : 0;
+
+  const totalEl = document.getElementById('dashMilesTotal');
+  if (totalEl) totalEl.textContent = totalMiles.toFixed(1);
+  const paceEl = document.getElementById('dashMilesPace');
+  if (paceEl) paceEl.textContent = paceNeeded.toFixed(2);
+  const toGoEl = document.getElementById('dashMilesToGo');
+  if (toGoEl) toGoEl.textContent = remaining.toFixed(1);
+  const barEl = document.getElementById('dashMilesBar');
+  if (barEl) barEl.style.width = Math.min(pct, 100) + '%';
+  const barLabel = document.getElementById('dashMilesBarLabel');
+  if (barLabel) barLabel.textContent = totalMiles.toFixed(1) + ' / ' + settings.goal.toFixed(1) + ' miles';
+}
+
 function getMilesSettings() {
   if (!data.milesGoal) data.milesGoal = 300.0;
-  if (data.milesBaseline === undefined || data.milesBaseline === null) data.milesBaseline = 48.9;
+  if (data.milesBaseline === undefined || data.milesBaseline === null) data.milesBaseline = 49.9;
   return { goal: data.milesGoal, baseline: data.milesBaseline };
 }
 
@@ -3728,7 +3797,7 @@ function refreshDashboard() {
   if (document.getElementById('dashProtein')) document.getElementById('dashProtein').textContent = dashP;
   if (document.getElementById('dashCarbs')) document.getElementById('dashCarbs').textContent = dashC;
   if (document.getElementById('dashFat')) document.getElementById('dashFat').textContent = dashF;
-  renderWeekGrid(); renderNudge(todayCheckin); renderDashboardInsights();
+  renderWeekGrid(); renderNudge(todayCheckin); renderDashboardInsights(); updateDashMiles();
 }
 
 function renderWeekGrid() {
