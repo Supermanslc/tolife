@@ -1,4 +1,4 @@
-const CACHE = 'tolife-v7.1';
+const CACHE = 'tolife-v7.2';
 const ASSETS = ['./index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {

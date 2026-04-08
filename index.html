@@ -1045,7 +1045,7 @@ input[type="range"]::-webkit-slider-thumb {
     </div>
   </div>
   <div class="header-actions">
-    <span class="version-tag">v7.1</span>
+    <span class="version-tag">v7.2</span>
     <button class="data-btn" onclick="showDataModal()">💾</button>
     <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">☀️</button>
   </div>
@@ -1328,6 +1328,11 @@ input[type="range"]::-webkit-slider-thumb {
       <button class="btn-secondary" onclick="wtAddExercise()" style="margin-top:0;margin-bottom:10px;background:var(--accent-green-soft);border-color:var(--accent-green);color:var(--accent-green)">+ Add Exercise to Session</button>
       <div id="wtSessionList" class="wt-session-list"></div>
     </div>
+    <div class="form-group" id="distanceSection" style="display:none">
+      <label class="form-label">📏 Distance (miles)</label>
+      <input type="number" step="0.1" class="form-input" id="workoutDistance" placeholder="e.g., 6.5">
+      <div style="font-size:0.82rem;color:var(--text-muted);margin-top:4px">Bike miles count as ½ run-equivalent. Run miles count 1:1.</div>
+    </div>
     <div class="slider-group" id="rpeSection">
       <div class="slider-header"><span class="form-label" style="margin:0">💪 Effort (RPE)</span><span class="slider-value" id="rpeVal" style="color:var(--accent-purple)">5</span></div>
       <input type="range" id="rpeSlider" min="1" max="10" value="5" oninput="updateSlider('rpe')">
@@ -1384,6 +1389,7 @@ input[type="range"]::-webkit-slider-thumb {
     <div class="chart-container"><canvas id="weightChart"></canvas></div>
     <div id="bfTrendCard" style="display:none;margin-top:12px">
       <div class="card-title" style="margin-bottom:8px">📉 Body Fat % Trend (Navy Est.)</div>
+      <div id="bfTrendSummary" style="margin-bottom:10px;padding:10px;background:var(--bg-input);border-radius:8px"></div>
       <div class="chart-container" style="height:160px"><canvas id="bfTrendChart"></canvas></div>
       <div style="font-size:0.8rem;color:var(--text-muted);margin-top:6px">Recalculates daily from your weight using stored waist/neck measurements. Update measurements monthly for best accuracy.</div>
     </div>
@@ -1428,6 +1434,33 @@ input[type="range"]::-webkit-slider-thumb {
       <div class="stat-card"><div class="stat-value stat-orange" id="currentStreak">0</div><div class="stat-label">Current Days</div></div>
       <div class="stat-card"><div class="stat-value stat-teal" id="bestStreak">0</div><div class="stat-label">Best Streak</div></div>
     </div>
+  </div>
+  <div class="card" id="milesTrackerCard">
+    <div class="card-title">🏃 Miles Tracker — 2026</div>
+    <div id="milesSummary" style="margin-bottom:10px;padding:10px;background:var(--bg-input);border-radius:8px"></div>
+    <div style="margin-bottom:8px">
+      <div style="height:14px;background:var(--card-border);border-radius:7px;overflow:hidden">
+        <div id="milesProgressBar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--accent-blue),var(--accent-teal));border-radius:7px;transition:width 0.5s ease"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:4px">
+        <div style="font-size:0.75rem;color:var(--text-muted)" id="milesProgressLabel">0.0 / 300.0 miles</div>
+        <div style="font-size:0.75rem;color:var(--text-muted)" id="milesPaceLabel"></div>
+      </div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-value stat-blue" id="milesTotalVal">0.0</div><div class="stat-label">Miles Logged</div></div>
+      <div class="stat-card"><div class="stat-value stat-orange" id="milesRemainingVal">0.0</div><div class="stat-label">Miles To Go</div></div>
+      <div class="stat-card"><div class="stat-value stat-teal" id="milesWeeklyPaceVal">0.00</div><div class="stat-label">Miles/Week Needed</div></div>
+      <div class="stat-card"><div class="stat-value stat-green" id="milesThisWeekVal">0.0</div><div class="stat-label">This Week</div></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <div style="flex:1"><label class="form-label">🎯 Year Goal (miles)</label>
+        <input type="number" step="0.1" class="form-input" id="milesGoalInput" value="300.0" style="text-align:center"></div>
+      <div style="flex:1"><label class="form-label">📌 Baseline Offset</label>
+        <input type="number" step="0.1" class="form-input" id="milesBaselineInput" value="48.9" style="text-align:center"></div>
+    </div>
+    <div style="font-size:0.82rem;color:var(--text-muted);margin-top:4px">Baseline = miles from before tracking started. Bike ÷ 2 + Run 1:1 + 10K-step days = 1 mile each.</div>
+    <button class="btn-secondary" onclick="saveMilesSettings()" style="margin-top:8px;font-size:0.82rem;padding:8px">Update Miles Settings</button>
   </div>
 </div>
 
@@ -1705,7 +1738,7 @@ function showPage(name) {
   document.getElementById('page' + name).classList.add('active');
   event.currentTarget.classList.add('active');
   if (name === 'Dashboard') refreshDashboard();
-  if (name === 'Insights') { refreshInsights(); renderGoalEditor(); updateMetabolicDisplay(); renderWeightChart(); renderBfTrendChart(); renderWeightHistory(); renderWeightStats(); }
+  if (name === 'Insights') { refreshInsights(); renderGoalEditor(); updateMetabolicDisplay(); renderWeightChart(); renderBfTrendChart(); renderWeightHistory(); renderWeightStats(); renderMilesTracker(); }
   if (name === 'Workout') { renderWorkoutHistory(); renderMyWorkouts(); }
   if (name === 'Nutrition') { renderQuickPicks(); renderFoodLog(); updateCalorieSummary(); }
 }
@@ -1955,6 +1988,9 @@ function setCardioSubtype(sub) {
       if (b.getAttribute('data-sub') === sub) b.classList.add('active');
     });
   }
+  // Show distance field for bike/run
+  const distSec = document.getElementById('distanceSection');
+  if (distSec) distSec.style.display = (sub === 'bike' || sub === 'run') ? 'block' : 'none';
   // Update burn estimate
   updateBurnEstimate();
 }
@@ -1963,7 +1999,7 @@ function setWorkoutType(type) {
   // Show/hide cardio subtype selector
   const subtypeWrap = document.getElementById('cardioSubtypeWrap');
   if (subtypeWrap) subtypeWrap.style.display = type === 'cardio' ? 'block' : 'none';
-  if (type !== 'cardio') currentCardioSubtype = '';
+  if (type !== 'cardio') { currentCardioSubtype = ''; const distSec = document.getElementById('distanceSection'); if (distSec) distSec.style.display = 'none'; }
   // Show/hide weights panel
   const wp = document.getElementById('weightsPanel');
   if (wp) { wp.style.display = type === 'weights' ? 'block' : 'none'; wp.classList.toggle('visible', type === 'weights'); }
@@ -2057,11 +2093,15 @@ function saveWorkout() {
   const w = getCurrentWeight();
   const calsBurned = manualBurn > 0 ? manualBurn : estimateBurn(currentWorkoutType, duration, rpe, w, currentCardioSubtype);
 
+  const distance = parseFloat(document.getElementById('workoutDistance').value) || 0;
+
   data.workouts.push({
     date: today(), type: currentWorkoutType, rpe, duration,
     focus: currentCardioFocus, hr: parseInt(document.getElementById('workoutHR').value) || 0,
     note: document.getElementById('workoutNote').value.trim(),
-    calsBurned
+    calsBurned,
+    cardioSubtype: currentCardioSubtype || '',
+    distance: distance
   });
   saveData();
 
@@ -2093,6 +2133,7 @@ function saveWorkout() {
     document.getElementById('workoutHR').value = '';
     document.getElementById('workoutNote').value = '';
     document.getElementById('workoutCalsBurned').value = '';
+    document.getElementById('workoutDistance').value = '';
     const upgradeMsg = upgraded ? ` · Activity → ${targetAct}` : '';
     showToast('💪 Workout logged! ' + calsBurned + ' cal burned (+' + Math.round(calsBurned * EXERCISE_CREDIT_RATE) + ' to budget)' + upgradeMsg);
   } else {
@@ -2100,6 +2141,7 @@ function saveWorkout() {
     document.getElementById('workoutHR').value = '';
     document.getElementById('workoutNote').value = '';
     document.getElementById('workoutCalsBurned').value = '';
+    document.getElementById('workoutDistance').value = '';
     showToast('💪 Workout logged! ' + calsBurned + ' cal burned (+' + Math.round(calsBurned * EXERCISE_CREDIT_RATE) + ' to budget)');
   }
   renderWorkoutHistory(); renderMyWorkouts(); refreshDashboard();
@@ -2836,6 +2878,21 @@ function renderBfTrendChart() {
     y: calcNavyBodyFat(e.weight, p.height, p.waist, p.neck)
   })).filter(e => e.y !== null);
   if (bfData.length < 2) { card.style.display = 'none'; return; }
+
+  // Summary bubble: Current | Goal 15.0% | Reduction from start
+  const currentBF = bfData[bfData.length - 1].y;
+  const startBF = bfData[0].y;
+  const reduction = startBF - currentBF;
+  const summaryEl = document.getElementById('bfTrendSummary');
+  if (summaryEl) {
+    summaryEl.innerHTML =
+      '<div style="display:flex;justify-content:space-around;text-align:center">' +
+      '<div><div style="font-family:JetBrains Mono;font-size:1.2rem;font-weight:700;color:#f0c040">' + currentBF.toFixed(1) + '%</div><div style="font-size:0.82rem;color:var(--text-muted)">Current</div></div>' +
+      '<div><div style="font-family:JetBrains Mono;font-size:1.2rem;font-weight:700;color:#2ea043">15.0%</div><div style="font-size:0.82rem;color:var(--text-muted)">Goal</div></div>' +
+      '<div><div style="font-family:JetBrains Mono;font-size:1.2rem;font-weight:700;color:' + (reduction >= 0 ? 'var(--accent-green)' : 'var(--accent-red)') + '">' + (reduction >= 0 ? '−' : '+') + Math.abs(reduction).toFixed(1) + '%</div><div style="font-size:0.82rem;color:var(--text-muted)">From Start</div></div>' +
+      '</div>';
+  }
+
   const isLight = document.documentElement.hasAttribute('data-theme');
   const gridColor = isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)';
   const textColor = isLight ? '#57606a' : '#8b949e';
@@ -2861,13 +2918,162 @@ function renderBfTrendChart() {
       },
       scales: {
         x: { type: 'category', ticks: { color: textColor, font: { size: 10 }, maxTicksLimit: 7 }, grid: { color: gridColor } },
-        y: { min: Math.max(5, minBF - 1.5), max: maxBF + 1.5,
-          ticks: { color: textColor, font: { size: 10 }, callback: v => v + '%' },
+        y: { min: Math.max(5, Math.floor((minBF - 1.5) * 10) / 10), max: Math.ceil((maxBF + 1.5) * 10) / 10,
+          ticks: { color: textColor, font: { size: 10 }, callback: v => parseFloat(v).toFixed(1) + '%' },
           grid: { color: gridColor } }
       }
     }
   });
 }
+// ===== MILES TRACKER =====
+function getMilesSettings() {
+  if (!data.milesGoal) data.milesGoal = 300.0;
+  if (data.milesBaseline === undefined || data.milesBaseline === null) data.milesBaseline = 48.9;
+  return { goal: data.milesGoal, baseline: data.milesBaseline };
+}
+
+function calcMilesFromWorkouts() {
+  let bikeMiles = 0, runMiles = 0, stepDays10k = 0;
+  const dailySteps = {};
+  const yearStart = new Date().getFullYear() + '-01-01';
+
+  data.workouts.forEach(w => {
+    if (w.date < yearStart) return;
+    const note = (w.note || '').toLowerCase();
+    const sub = (w.cardioSubtype || '').toLowerCase();
+
+    // 1. Check structured distance field first (new entries)
+    if (w.distance && w.distance > 0) {
+      if (sub === 'bike') { bikeMiles += w.distance; return; }
+      if (sub === 'run') { runMiles += w.distance; return; }
+    }
+
+    // 2. Fallback: parse from notes (legacy entries)
+    const mileMatch = note.match(/([\d.]+)\s*miles?/);
+    if (mileMatch) {
+      const miles = parseFloat(mileMatch[1]);
+      if (sub === 'bike' || note.includes('bike')) { bikeMiles += miles; return; }
+      if (sub === 'run' || note.includes('run') || note.includes('jog')) { runMiles += miles; return; }
+      // Ambiguous "X miles" with no keyword — check if 0-min duration (bike pattern)
+      if (!note.includes('walk') && w.duration === 0) { bikeMiles += miles; return; }
+      if (!note.includes('walk')) { runMiles += miles; return; }
+    }
+
+    // 3. Count steps for 10K-day detection
+    const stepMatch = note.match(/([\d,]+)\s*steps?/);
+    if (stepMatch) {
+      const steps = parseInt(stepMatch[1].replace(/,/g, ''));
+      if (!dailySteps[w.date]) dailySteps[w.date] = 0;
+      dailySteps[w.date] += steps;
+    }
+  });
+
+  // Count 10K+ step days
+  Object.values(dailySteps).forEach(steps => {
+    if (steps >= 10000) stepDays10k++;
+  });
+
+  const runEquivFromBike = bikeMiles / 2;
+  return {
+    bikeMiles: Math.round(bikeMiles * 10) / 10,
+    runMiles: Math.round(runMiles * 10) / 10,
+    stepDays10k,
+    runEquivFromBike: Math.round(runEquivFromBike * 10) / 10,
+    calculatedTotal: Math.round((runEquivFromBike + runMiles + stepDays10k) * 10) / 10
+  };
+}
+
+function renderMilesTracker() {
+  const settings = getMilesSettings();
+  const calc = calcMilesFromWorkouts();
+  const totalMiles = Math.round((settings.baseline + calc.calculatedTotal) * 10) / 10;
+  const remaining = Math.round(Math.max(0, settings.goal - totalMiles) * 10) / 10;
+  const pct = Math.min(100, (totalMiles / settings.goal) * 100);
+
+  // Weeks remaining to Dec 31
+  const now = new Date();
+  const eoy = new Date(now.getFullYear(), 11, 31);
+  const msLeft = eoy - now;
+  const weeksLeft = Math.max(0.1, msLeft / (7 * 24 * 60 * 60 * 1000));
+  const paceNeeded = remaining > 0 ? (remaining / weeksLeft) : 0;
+
+  // This week's miles
+  const sow = new Date(now); sow.setDate(now.getDate() - now.getDay());
+  const sowStr = sow.getFullYear()+'-'+String(sow.getMonth()+1).padStart(2,'0')+'-'+String(sow.getDate()).padStart(2,'0');
+  let weekBike = 0, weekRun = 0, weekStepDays = {};
+  data.workouts.filter(w => w.date >= sowStr).forEach(w => {
+    const note = (w.note || '').toLowerCase();
+    const sub = (w.cardioSubtype || '').toLowerCase();
+    if (w.distance && w.distance > 0) {
+      if (sub === 'bike') weekBike += w.distance;
+      else if (sub === 'run') weekRun += w.distance;
+    } else {
+      const mm = note.match(/([\d.]+)\s*miles?/);
+      if (mm) {
+        const m = parseFloat(mm[1]);
+        if (sub === 'bike' || note.includes('bike')) weekBike += m;
+        else if (sub === 'run' || note.includes('run')) weekRun += m;
+        else if (!note.includes('walk') && w.duration === 0) weekBike += m;
+        else if (!note.includes('walk')) weekRun += m;
+      }
+    }
+    const sm = note.match(/([\d,]+)\s*steps?/);
+    if (sm) {
+      const s = parseInt(sm[1].replace(/,/g, ''));
+      if (!weekStepDays[w.date]) weekStepDays[w.date] = 0;
+      weekStepDays[w.date] += s;
+    }
+  });
+  let weekStepMiles = 0;
+  Object.values(weekStepDays).forEach(s => { if (s >= 10000) weekStepMiles++; });
+  const thisWeek = Math.round((weekBike / 2 + weekRun + weekStepMiles) * 10) / 10;
+
+  // Update UI
+  document.getElementById('milesTotalVal').textContent = totalMiles.toFixed(1);
+  document.getElementById('milesRemainingVal').textContent = remaining.toFixed(1);
+  document.getElementById('milesWeeklyPaceVal').textContent = paceNeeded.toFixed(2);
+  document.getElementById('milesThisWeekVal').textContent = thisWeek.toFixed(1);
+  document.getElementById('milesProgressBar').style.width = Math.min(pct, 100) + '%';
+  document.getElementById('milesProgressLabel').textContent = totalMiles.toFixed(1) + ' / ' + settings.goal.toFixed(1) + ' miles';
+  const paceLabel = document.getElementById('milesPaceLabel');
+  if (paceLabel) {
+    if (remaining <= 0) { paceLabel.textContent = '🎉 Goal reached!'; paceLabel.style.color = 'var(--accent-green)'; }
+    else { paceLabel.textContent = paceNeeded.toFixed(2) + ' mi/wk needed · ' + Math.round(weeksLeft) + ' weeks left'; }
+  }
+
+  // Summary bubble
+  const summaryEl = document.getElementById('milesSummary');
+  if (summaryEl) {
+    summaryEl.innerHTML =
+      '<div style="display:flex;justify-content:space-around;text-align:center">' +
+      '<div><div style="font-family:JetBrains Mono;font-size:1.2rem;font-weight:700;color:var(--accent-blue)">' + totalMiles.toFixed(1) + '</div><div style="font-size:0.82rem;color:var(--text-muted)">Total Miles</div></div>' +
+      '<div><div style="font-family:JetBrains Mono;font-size:1.2rem;font-weight:700;color:var(--accent-orange)">' + settings.goal.toFixed(1) + '</div><div style="font-size:0.82rem;color:var(--text-muted)">Goal</div></div>' +
+      '<div><div style="font-family:JetBrains Mono;font-size:1.2rem;font-weight:700;color:var(--accent-teal)">' + paceNeeded.toFixed(2) + '</div><div style="font-size:0.82rem;color:var(--text-muted)">Mi/Wk</div></div>' +
+      '</div>' +
+      '<div style="font-size:0.78rem;color:var(--text-muted);text-align:center;margin-top:6px">' +
+      '🚲 ' + calc.bikeMiles.toFixed(1) + ' bike mi (=' + calc.runEquivFromBike.toFixed(1) + ' run eq.) · ' +
+      '🏃 ' + calc.runMiles.toFixed(1) + ' run mi · ' +
+      '👟 ' + calc.stepDays10k + ' × 10K-step days · ' +
+      '📌 ' + settings.baseline.toFixed(1) + ' baseline' +
+      '</div>';
+  }
+
+  // Populate settings fields
+  document.getElementById('milesGoalInput').value = settings.goal.toFixed(1);
+  document.getElementById('milesBaselineInput').value = settings.baseline.toFixed(1);
+}
+
+function saveMilesSettings() {
+  const goal = parseFloat(document.getElementById('milesGoalInput').value);
+  const baseline = parseFloat(document.getElementById('milesBaselineInput').value);
+  if (!goal || goal < 1) { showToast('⚠️ Enter a valid goal'); return; }
+  data.milesGoal = Math.round(goal * 10) / 10;
+  data.milesBaseline = Math.round((baseline || 0) * 10) / 10;
+  saveData();
+  renderMilesTracker();
+  showToast('🏃 Miles settings saved!');
+}
+
 let lastAiResult = null;
 
 async function estimateCalories() {
