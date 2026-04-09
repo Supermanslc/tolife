@@ -1157,6 +1157,19 @@ input[type="range"]::-webkit-slider-thumb {
     <div class="week-grid" id="weekGrid"></div>
   </div>
 
+  <div id="recoveryAlert" class="card" style="display:none;border-color:var(--accent-red);border-width:1.5px;box-shadow:0 0 12px rgba(248,81,73,0.15)">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <span style="font-size:1.1rem">🔴</span>
+      <span style="font-size:0.88rem;font-weight:700;color:var(--accent-red);text-transform:uppercase;letter-spacing:0.5px">Recovery Day</span>
+    </div>
+    <div id="recoveryText" style="font-size:0.88rem;color:var(--text-secondary);line-height:1.5"></div>
+  </div>
+
+  <div id="smartFoodCard" class="card" style="display:none">
+    <div class="card-title">🧠 Smart Food Suggestions</div>
+    <div id="smartFoodContent" style="font-size:0.88rem;line-height:1.6"></div>
+  </div>
+
   <div id="insightsContainer"></div>
 </div>
 
@@ -3864,6 +3877,152 @@ function renderDashboardInsights() {
     insights.push({type:'info',icon:'🏋️',text:'Burned '+todayBurned+' cal today → +'+credit+' added to budget (50% credit). Exercise is bonus deficit, not permission to eat more.'});
   }
   c.innerHTML = insights.map(i=>'<div class="insight-card insight-'+i.type+'"><span class="insight-icon">'+i.icon+'</span><span>'+i.text+'</span></div>').join('');
+
+  // Smart food suggestions + recovery alert
+  renderSmartFoodSuggestions();
+}
+
+function renderSmartFoodSuggestions() {
+  const recoveryEl = document.getElementById('recoveryAlert');
+  const recoveryText = document.getElementById('recoveryText');
+  const smartCard = document.getElementById('smartFoodCard');
+  const smartContent = document.getElementById('smartFoodContent');
+  if (!recoveryEl || !smartCard) return;
+
+  // Analyze yesterday's data
+  const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+  const yStr = yesterday.getFullYear()+'-'+String(yesterday.getMonth()+1).padStart(2,'0')+'-'+String(yesterday.getDate()).padStart(2,'0');
+  const yCal = data.calories.find(c => c.date === yStr);
+  const todayCal = data.calories.find(c => c.date === today());
+
+  // Determine "recovery day" — yesterday was significantly over target
+  const isRecoveryDay = yCal && yCal.target > 0 && yCal.consumed > yCal.target * 1.3;
+  // Also flag if today is already going badly (consumed > 80% of budget before noon-ish)
+  const todayConsumed = todayCal && todayCal.log ? todayCal.log.reduce((s,f) => s + f.calories, 0) : 0;
+  const todayBudget = todayCal ? todayCal.target : calcTarget(getCurrentWeight(), 'moderate');
+  const hour = new Date().getHours();
+  const todayRunningHot = hour < 14 && todayConsumed > todayBudget * 0.75;
+
+  // Find best foods from history — foods that appear on good adherence days
+  const allCalDays = data.calories.filter(c => c.log && c.log.length > 0 && c.consumed > 0);
+  const goodDays = allCalDays.filter(c => c.target > 0 && c.consumed <= c.target * 1.05);
+  const badDays = allCalDays.filter(c => c.target > 0 && c.consumed > c.target * 1.2);
+
+  // Count food frequency on good days
+  const goodFoodCounts = {};
+  goodDays.forEach(day => {
+    const seen = new Set();
+    day.log.forEach(f => {
+      const name = f.name.replace(/^🍱\s*/, '').toLowerCase().trim();
+      if (!seen.has(name)) { goodFoodCounts[name] = (goodFoodCounts[name] || 0) + 1; seen.add(name); }
+    });
+  });
+
+  // Find high-protein foods from history
+  const allFoodsLogged = [];
+  allCalDays.forEach(day => {
+    day.log.forEach(f => {
+      if (f.protein && f.calories) {
+        allFoodsLogged.push({ name: f.name, calories: f.calories, protein: f.protein, ratio: f.protein / f.calories });
+      }
+    });
+  });
+  // Deduplicate and sort by protein density
+  const proteinFoods = {};
+  allFoodsLogged.forEach(f => {
+    const key = f.name.toLowerCase().trim();
+    if (!proteinFoods[key] || f.ratio > proteinFoods[key].ratio) {
+      proteinFoods[key] = { name: f.name, calories: f.calories, protein: f.protein, ratio: f.ratio };
+    }
+  });
+  const topProtein = Object.values(proteinFoods).sort((a,b) => b.ratio - a.ratio).slice(0, 5);
+
+  // Top good-day foods sorted by frequency
+  const topGoodFoods = Object.entries(goodFoodCounts).sort((a,b) => b[1] - a[1]).slice(0, 5).map(e => e[0]);
+
+  // Weekly protein check
+  const last7Cal = allCalDays.filter(c => {
+    const d = daysBetween(c.date, today());
+    return d >= 0 && d <= 7;
+  });
+  const avgProtein = last7Cal.length > 0 ? Math.round(last7Cal.reduce((s, c) => s + c.log.reduce((ss, f) => ss + (f.protein || 0), 0), 0) / last7Cal.length) : 0;
+  const targetProtein = Math.round(getCurrentWeight() * 0.36);
+
+  // ===== RECOVERY DAY ALERT =====
+  if (isRecoveryDay) {
+    const overAmt = yCal.consumed - yCal.target;
+    let recoveryMsg = 'Yesterday was ' + yCal.consumed.toLocaleString() + ' cal — ' + overAmt.toLocaleString() + ' over target. ';
+    recoveryMsg += 'One day doesn\'t undo your progress. ';
+
+    // Suggest specific bounce-back foods from their good days
+    if (topGoodFoods.length >= 2) {
+      recoveryMsg += 'Your best days usually feature: <strong>' + topGoodFoods.slice(0, 3).join('</strong>, <strong>') + '</strong>. ';
+    }
+    recoveryMsg += 'Front-load protein today to stay satisfied and reduce cravings.';
+
+    if (topProtein.length >= 2) {
+      recoveryMsg += '<div style="margin-top:8px;font-size:0.85rem;color:var(--text-muted)">🥩 High-protein picks: ';
+      recoveryMsg += topProtein.slice(0, 3).map(f => '<strong>' + f.name + '</strong> (' + f.calories + ' cal, ' + f.protein + 'g)').join(' · ');
+      recoveryMsg += '</div>';
+    }
+
+    recoveryText.innerHTML = recoveryMsg;
+    recoveryEl.style.display = 'block';
+  } else {
+    recoveryEl.style.display = 'none';
+  }
+
+  // ===== SMART FOOD SUGGESTIONS =====
+  let suggestions = [];
+
+  // Running hot today warning
+  if (todayRunningHot && !isRecoveryDay) {
+    suggestions.push('<div style="color:var(--accent-orange);font-weight:600;margin-bottom:6px">⚠️ Already at ' + Math.round(todayConsumed / todayBudget * 100) + '% of budget before ' + (hour <= 12 ? 'noon' : '2 PM') + '. Go light the rest of the day.</div>');
+  }
+
+  // Protein trailing
+  if (avgProtein > 0 && avgProtein < targetProtein && last7Cal.length >= 3) {
+    let proteinMsg = '🥩 Protein averaging <strong>' + avgProtein + 'g/day</strong> this week (target: ' + targetProtein + 'g+).';
+    if (topProtein.length >= 2) {
+      proteinMsg += ' Best options from your log: ' + topProtein.slice(0, 3).map(f => '<strong>' + f.name + '</strong> (' + f.protein + 'g)').join(', ') + '.';
+    }
+    suggestions.push(proteinMsg);
+  }
+
+  // Good-day food suggestions (when not a recovery day — recovery card handles that)
+  if (!isRecoveryDay && topGoodFoods.length >= 3 && goodDays.length >= 5) {
+    // Check what hasn't been eaten recently
+    const recent3Days = allCalDays.slice(-3);
+    const recentFoods = new Set();
+    recent3Days.forEach(d => d.log.forEach(f => recentFoods.add(f.name.toLowerCase().trim())));
+    const missingStaples = topGoodFoods.filter(f => !recentFoods.has(f));
+    if (missingStaples.length > 0) {
+      suggestions.push('📋 Staples missing lately: <strong>' + missingStaples.slice(0, 3).join('</strong>, <strong>') + '</strong> — these appear on your best days.');
+    }
+  }
+
+  // Today is empty — suggest based on time of day
+  if (todayConsumed === 0 && hour >= 7 && goodDays.length >= 3) {
+    // Find most common breakfast-ish items (logged on good days, typically first item)
+    const breakfastItems = {};
+    goodDays.forEach(d => {
+      if (d.log.length > 0) {
+        const first = d.log[0].name.toLowerCase().trim();
+        breakfastItems[first] = (breakfastItems[first] || 0) + 1;
+      }
+    });
+    const topBreakfast = Object.entries(breakfastItems).sort((a,b) => b[1] - a[1]).slice(0, 3).map(e => e[0]);
+    if (topBreakfast.length > 0 && hour < 11) {
+      suggestions.push('🌅 Start strong — your go-to breakfasts: <strong>' + topBreakfast.join('</strong>, <strong>') + '</strong>.');
+    }
+  }
+
+  if (suggestions.length > 0) {
+    smartContent.innerHTML = suggestions.join('<div style="height:8px"></div>');
+    smartCard.style.display = 'block';
+  } else {
+    smartCard.style.display = 'none';
+  }
 }
 
 // ===== INSIGHTS =====
