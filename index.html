@@ -82,7 +82,7 @@ body {
   min-height: 100vh;
   transition: background var(--transition), color var(--transition);
   overflow-x: hidden;
-  padding-bottom: 80px;
+  padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px));
 }
 
 /* ===== HEADER ===== */
@@ -4253,8 +4253,21 @@ function renderAdaptiveSuggestions() {
 }
 
 // ===== STREAKS =====
-function calcStreak() { let s=0,d=new Date(); while(true) { const ds=d.toISOString().split('T')[0]; if(!data.workouts.some(w=>w.date===ds)&&!data.checkins.some(c=>c.date===ds)&&!data.weights.some(w=>w.date===ds)) break; s++; d.setDate(d.getDate()-1); } return s; }
-function calcBestStreak() { const ad=[...new Set([...data.workouts.map(w=>w.date),...data.checkins.map(c=>c.date),...data.weights.map(w=>w.date)])].sort(); let b=0,c=1; for(let i=1;i<ad.length;i++){if(daysBetween(ad[i-1],ad[i])===1)c++;else{b=Math.max(b,c);c=1;}} return Math.max(b,c,ad.length>0?1:0); }
+function calcStreak() {
+  let s = 0, d = new Date();
+  const ds0 = d.toISOString().split('T')[0];
+  const todayHasData = data.workouts.some(w=>w.date===ds0) || data.checkins.some(c=>c.date===ds0) || data.weights.some(w=>w.date===ds0) || data.calories.some(c=>c.date===ds0 && c.consumed > 0);
+  if (todayHasData) s++;
+  else { /* today not logged yet — don't break streak, just skip today */ }
+  d.setDate(d.getDate() - 1);
+  while(true) {
+    const ds = d.toISOString().split('T')[0];
+    if (!data.workouts.some(w=>w.date===ds) && !data.checkins.some(c=>c.date===ds) && !data.weights.some(w=>w.date===ds) && !data.calories.some(c=>c.date===ds && c.consumed > 0)) break;
+    s++; d.setDate(d.getDate()-1);
+  }
+  return s;
+}
+function calcBestStreak() { const ad=[...new Set([...data.workouts.map(w=>w.date),...data.checkins.map(c=>c.date),...data.weights.map(w=>w.date),...data.calories.filter(c=>c.consumed>0).map(c=>c.date)])].sort(); let b=0,c=1; for(let i=1;i<ad.length;i++){if(daysBetween(ad[i-1],ad[i])===1)c++;else{b=Math.max(b,c);c=1;}} return Math.max(b,c,ad.length>0?1:0); }
 
 // ===== DATA MANAGEMENT =====
 function showDataModal() { document.getElementById('dataModal').classList.add('active'); }
