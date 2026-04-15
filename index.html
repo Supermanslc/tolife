@@ -154,6 +154,9 @@ body {
   justify-content: space-around;
   padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
   z-index: 100;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  will-change: transform;
 }
 
 .nav-item {
@@ -1052,7 +1055,7 @@ input[type="range"]::-webkit-slider-thumb {
     </div>
   </div>
   <div class="header-actions">
-    <span class="version-tag">v7.3</span>
+    <span class="version-tag">v7.4</span>
     <button class="data-btn" onclick="showDataModal()">💾</button>
     <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">☀️</button>
   </div>
@@ -1259,8 +1262,14 @@ input[type="range"]::-webkit-slider-thumb {
     <p style="font-size:0.88rem;color:var(--text-secondary);margin-bottom:10px">Describe food — leave Cal blank for AI estimate, or enter calories from the label to log instantly.</p>
     <div style="display:flex;gap:5px;margin-bottom:10px">
       <input type="text" id="foodInput" placeholder="e.g., Greek yogurt" style="flex:1;min-width:0;padding:10px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-xs);color:var(--text-primary);font-family:'DM Sans',sans-serif;font-size:0.88rem" onkeypress="if(event.key==='Enter')smartFoodEntry()">
-      <input type="number" id="manualFoodCal" placeholder="Cal" style="width:58px;flex:0 0 58px;padding:10px 4px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-xs);color:var(--text-primary);font-family:'JetBrains Mono',monospace;font-size:0.85rem;text-align:center" onkeypress="if(event.key==='Enter')smartFoodEntry()">
+      <input type="number" id="manualFoodCal" placeholder="Cal" style="width:54px;flex:0 0 54px;padding:10px 4px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-xs);color:var(--text-primary);font-family:'JetBrains Mono',monospace;font-size:0.85rem;text-align:center" onkeypress="if(event.key==='Enter')smartFoodEntry()">
+      <button onclick="document.getElementById('foodCameraInput').click()" style="padding:10px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-xs);cursor:pointer;font-size:1rem;flex:0 0 auto;line-height:1" title="Snap a photo">📷</button>
       <button id="estimateBtn" onclick="smartFoodEntry()" style="padding:10px 12px;background:linear-gradient(135deg,var(--accent-blue),var(--accent-teal));color:#fff;border:none;border-radius:var(--radius-xs);font-weight:700;cursor:pointer;white-space:nowrap;font-size:0.82rem;flex:0 0 auto">Log</button>
+    </div>
+    <input type="file" id="foodCameraInput" accept="image/*" capture="environment" style="display:none" onchange="handleFoodPhoto(event)">
+    <div id="foodPhotoPreview" style="display:none;margin-bottom:10px;text-align:center">
+      <img id="foodPhotoImg" style="max-width:100%;max-height:150px;border-radius:8px;border:1px solid var(--border)">
+      <div style="font-size:0.78rem;color:var(--text-muted);margin-top:4px">Analyzing photo...</div>
     </div>
     <div class="ai-result" id="aiResult"></div>
   </div>
@@ -2426,11 +2435,32 @@ function wtStep(field, delta) {
 
 function wtUpdateCalPreview() {
   const el = document.getElementById('wtCalPreview');
-  const ex = WT_EXERCISES.find(e => e.name === wtCurrentExercise);
-  const bodyweightEx = ['Push Up', 'Plank', 'Crunch', 'Russian Twist'].includes(wtCurrentExercise);
+  const ex = wtGetAllExercises().find(e => e.name === wtCurrentExercise);
+  const bodyweightEx = ['Push Up', 'Plank', 'Crunch', 'Russian Twist', 'Pull Up', 'Dips', 'Leg Raise'].includes(wtCurrentExercise) || (ex && ex._bodyweight);
   if (!ex || wtSets <= 0 || wtReps <= 0 || (!bodyweightEx && wtWeight <= 0)) { el.innerHTML = ''; return; }
   const cal = wtEstCal(ex, wtSets, wtReps, wtWeight);
   el.innerHTML = '<div class="wt-cal-preview"><span style="color:var(--text-secondary)">Est. burn</span><span class="wt-cal-value">' + cal + ' <span style="font-size:0.7rem">kcal</span></span></div>';
+}
+
+function wtAddCustomExercise() {
+  const name = document.getElementById('wtCustomName').value.trim();
+  const cat = document.getElementById('wtCustomCat').value;
+  const bw = document.getElementById('wtCustomBW').value;
+  if (!name) { showToast('⚠️ Enter exercise name'); return; }
+  if (!data.customExercises) data.customExercises = [];
+  // Check for duplicates
+  const allEx = [...WT_EXERCISES, ...data.customExercises];
+  if (allEx.find(e => e.name.toLowerCase() === name.toLowerCase())) { showToast('⚠️ Exercise already exists'); return; }
+  const newEx = { name, met: 3.5, cat, _custom: true };
+  if (bw === 'bodyweight') newEx._bodyweight = true;
+  data.customExercises.push(newEx);
+  saveData();
+  wtRenderDropdown();
+  showToast('✅ ' + name + ' added to ' + cat);
+}
+
+function wtGetAllExercises() {
+  return [...WT_EXERCISES, ...(data.customExercises || [])];
 }
 
 function wtSelectExercise(name) {
@@ -2438,7 +2468,7 @@ function wtSelectExercise(name) {
   wtDropdownOpen = false;
   document.getElementById('wtDropdownList').style.display = 'none';
   document.getElementById('wtDropdownTrigger').classList.remove('open');
-  const ex = WT_EXERCISES.find(e => e.name === name);
+  const ex = wtGetAllExercises().find(e => e.name === name);
   document.getElementById('wtDropdownLabel').textContent = name;
   document.getElementById('wtDropdownLabel').style.color = 'var(--text-primary)';
   // Auto-fill from history, or use smart defaults
@@ -2447,8 +2477,8 @@ function wtSelectExercise(name) {
     wtSets = hist[0].sets; wtReps = hist[0].reps; wtWeight = hist[0].weight;
   } else {
     // Smart defaults based on exercise type
-    const bodyweight = ['Push Up', 'Plank', 'Crunch', 'Russian Twist'].includes(name);
-    const compound = ['Bench Press','Incline Bench Press','Squat','Deadlift','Shoulder Press','Bent Over Row','Leg Press'].includes(name);
+    const bodyweight = ['Push Up', 'Plank', 'Crunch', 'Russian Twist', 'Pull Up', 'Dips', 'Leg Raise'].includes(name) || (ex && ex._bodyweight);
+    const compound = ['Bench Press','Incline Bench Press','Decline Bench Press','Dumbbell Bench Press','Squat','Deadlift','Shoulder Press','Military Press','Bent Over Row','Leg Press','Lunges','Romanian Deadlift','T-Bar Row','Hip Thrust','Arnold Press','Dumbbell Shoulder Press'].includes(name);
     wtSets = 5;
     wtReps = bodyweight ? 12 : 8;
     wtWeight = bodyweight ? 0 : compound ? 45 : 20;
@@ -2470,17 +2500,36 @@ function wtToggleDropdown() {
 
 function wtRenderDropdown() {
   const list = document.getElementById('wtDropdownList');
-  const cats = ['All', ...new Set(WT_EXERCISES.map(e => e.cat))];
-  const filtered = wtCatFilter === 'All' ? WT_EXERCISES : WT_EXERCISES.filter(e => e.cat === wtCatFilter);
+  // Merge built-in + custom exercises
+  const customExercises = data.customExercises || [];
+  const allExercises = [...WT_EXERCISES, ...customExercises];
+  const cats = ['All', ...new Set(allExercises.map(e => e.cat))];
+  const filtered = wtCatFilter === 'All' ? allExercises : allExercises.filter(e => e.cat === wtCatFilter);
   let html = '<div class="wt-cat-filter">';
   cats.forEach(c => { html += '<button class="wt-cat-btn' + (wtCatFilter === c ? ' active' : '') + '" onclick="event.stopPropagation();wtCatFilter=\'' + c + '\';wtRenderDropdown()">' + c + '</button>'; });
   html += '</div>';
   filtered.forEach(ex => {
     const prev = ((data.weightTraining || {})[ex.name] || [])[0];
     const lastStr = prev ? '<div class="wt-ex-last">Last: ' + prev.sets + '×' + prev.reps + ' @ ' + prev.weight + ' lbs</div>' : '';
-    html += '<div class="wt-ex-item" onclick="wtSelectExercise(\'' + ex.name.replace(/'/g, "\\'") + '\')"><div><div class="wt-ex-name">' + ex.name + '</div>' + lastStr + '</div><span class="wt-ex-cat" style="color:var(--accent-teal);background:var(--accent-teal-soft)">' + ex.cat + '</span></div>';
+    const isCustom = ex._custom ? ' <span style="font-size:0.65rem;color:var(--accent-purple)">custom</span>' : '';
+    html += '<div class="wt-ex-item" onclick="wtSelectExercise(\'' + ex.name.replace(/'/g, "\\'") + '\')"><div><div class="wt-ex-name">' + ex.name + isCustom + '</div>' + lastStr + '</div><span class="wt-ex-cat" style="color:var(--accent-teal);background:var(--accent-teal-soft)">' + ex.cat + '</span></div>';
   });
+  // Add custom exercise button
+  const addCat = wtCatFilter !== 'All' ? wtCatFilter : '';
+  html += '<div style="padding:8px;border-top:1px solid var(--border);margin-top:4px">' +
+    '<div style="display:flex;gap:4px">' +
+    '<input type="text" id="wtCustomName" placeholder="New exercise name" style="flex:1;padding:6px 8px;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:0.82rem;font-family:DM Sans" onclick="event.stopPropagation()">' +
+    '<select id="wtCustomCat" style="padding:6px;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:0.78rem" onclick="event.stopPropagation()">' +
+    '<option value="Arms">Arms</option><option value="Chest">Chest</option><option value="Legs">Legs</option><option value="Back">Back</option><option value="Shoulders">Shoulders</option><option value="Core">Core</option>' +
+    '</select>' +
+    '<select id="wtCustomBW" style="padding:6px;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:0.78rem" onclick="event.stopPropagation()">' +
+    '<option value="weighted">Weighted</option><option value="bodyweight">Bodyweight</option>' +
+    '</select>' +
+    '<button onclick="event.stopPropagation();wtAddCustomExercise()" style="padding:6px 10px;background:var(--accent-green);color:#fff;border:none;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer">+</button>' +
+    '</div></div>';
   list.innerHTML = html;
+  // Pre-select category if filtered
+  if (addCat) { const sel = document.getElementById('wtCustomCat'); if (sel) sel.value = addCat; }
 }
 
 function wtRenderLastSession(name, hist) {
@@ -2517,8 +2566,8 @@ function wtApplySuggestion(sets, reps, weight) {
 }
 
 function wtAddExercise() {
-  const ex = WT_EXERCISES.find(e => e.name === wtCurrentExercise);
-  const bodyweight = ['Push Up', 'Plank', 'Crunch', 'Russian Twist'].includes(wtCurrentExercise);
+  const ex = wtGetAllExercises().find(e => e.name === wtCurrentExercise);
+  const bodyweight = ['Push Up', 'Plank', 'Crunch', 'Russian Twist', 'Pull Up', 'Dips', 'Leg Raise'].includes(wtCurrentExercise) || (ex && ex._bodyweight);
   if (!ex || wtSets <= 0 || wtReps <= 0 || (!bodyweight && wtWeight <= 0)) { showToast('⚠️ Select exercise & set values'); return; }
   const cal = wtEstCal(ex, wtSets, wtReps, wtWeight);
   wtSessionExercises.push({ name: ex.name, cat: ex.cat, sets: wtSets, reps: wtReps, weight: wtWeight, calories: cal });
@@ -3732,15 +3781,9 @@ function addManualFood() {
   entry.log.push({ id: generateId(), name: name, calories: adjusted, protein: 0, carbs: 0, fat: 0, time: timeStr });
   entry.consumed = entry.log.reduce((s, f) => s + f.calories, 0);
   saveTodayCalorieEntry(entry); saveData();
-  // Save to myFoods if not already there
-  const existing = data.myFoods.find(f => f.name.toLowerCase() === name.toLowerCase());
-  if (!existing) {
-    data.myFoods.push({ id: generateId(), name: name, calories: adjusted, protein: 0, carbs: 0, fat: 0, count: 1 });
-    saveData();
-  } else { existing.count = (existing.count || 0) + 1; saveData(); }
   document.getElementById('foodInput').value = '';
   document.getElementById('manualFoodCal').value = '';
-  renderFoodLog(); updateCalorieSummary(); renderQuickPicks();
+  renderFoodLog(); updateCalorieSummary();
   showToast('✅ ' + name + ' — ' + adjusted + ' cal (+5% adj)');
 }
 
@@ -3755,12 +3798,62 @@ function smartFoodEntry() {
   }
 }
 
+async function handleFoodPhoto(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  showToast('📷 Analyzing photo...', 8000);
+  const preview = document.getElementById('foodPhotoPreview');
+  const img = document.getElementById('foodPhotoImg');
+  try {
+    const bitmap = await createImageBitmap(file);
+    const maxW = 800;
+    const scale = bitmap.width > maxW ? maxW / bitmap.width : 1;
+    const canvas = document.createElement('canvas');
+    canvas.width = bitmap.width * scale;
+    canvas.height = bitmap.height * scale;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+    const base64 = dataUrl.split(',')[1];
+    img.src = dataUrl;
+    preview.style.display = 'block';
+    const r = await fetch(CONFIG.workerUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'food_image', image: base64, media_type: 'image/jpeg' }),
+      signal: AbortSignal.timeout(20000)
+    });
+    if (r.ok) {
+      const d = await r.json();
+      if (d.items) {
+        lastAiResult = d;
+        displayAiResult(d);
+        preview.style.display = 'none';
+        showToast('📷 Photo analyzed!');
+      } else {
+        showToast('⚠️ Could not identify food in photo');
+        preview.style.display = 'none';
+      }
+    } else {
+      showToast('⚠️ Photo analysis failed — try describing it instead');
+      preview.style.display = 'none';
+    }
+  } catch (e) {
+    console.warn('Food photo error:', e.message);
+    showToast('⚠️ Photo analysis failed — try describing it instead');
+    preview.style.display = 'none';
+  }
+  event.target.value = '';
+}
+
 function renderFoodLog() {
   const c = document.getElementById('foodLogList'); const log = getTodayFoodLog();
   if (!log.length) { c.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:0.85rem">No food logged today yet.</div>'; return; }
-  c.innerHTML = log.map(f =>
-    '<div class="food-log-item"><span class="food-log-name">'+f.name+' <span style="color:var(--text-muted);font-size:0.85rem">'+(f.time||'')+'</span></span><span class="food-log-cal">'+f.calories+'</span><button class="food-log-remove" onclick="reAddFoodLogItem(\''+f.id+'\')" title="Add again" style="color:var(--accent-green);opacity:0.6">+</button><button class="food-log-remove" onclick="removeFoodLogItem(\''+f.id+'\')" title="Remove">×</button></div>'
-  ).join('');
+  c.innerHTML = log.map(f => {
+    const isSaved = data.myFoods.some(mf => mf.name.toLowerCase() === f.name.toLowerCase());
+    const saveBtn = isSaved ? '' : '<button class="food-log-remove" onclick="saveFoodToMyFoods(\''+f.id+'\')" title="Save to My Foods" style="color:var(--accent-orange);opacity:0.6">⭐</button>';
+    return '<div class="food-log-item"><span class="food-log-name">'+f.name+' <span style="color:var(--text-muted);font-size:0.85rem">'+(f.time||'')+'</span></span><span class="food-log-cal">'+f.calories+'</span>'+saveBtn+'<button class="food-log-remove" onclick="reAddFoodLogItem(\''+f.id+'\')" title="Add again" style="color:var(--accent-green);opacity:0.6">+</button><button class="food-log-remove" onclick="removeFoodLogItem(\''+f.id+'\')" title="Remove">×</button></div>';
+  }).join('');
 }
 
 function removeFoodLogItem(id) {
@@ -3779,6 +3872,20 @@ function reAddFoodLogItem(id) {
   saveTodayCalorieEntry(e); saveData();
   renderFoodLog(); updateCalorieSummary();
   showToast('✅ ' + orig.name + ' added again');
+}
+
+function saveFoodToMyFoods(id) {
+  const e = getTodayCalorieEntry();
+  const item = e.log.find(f => f.id === id);
+  if (!item) return;
+  const existing = data.myFoods.find(f => f.name.toLowerCase() === item.name.toLowerCase());
+  if (!existing) {
+    data.myFoods.push({ id: generateId(), name: item.name, calories: item.calories, protein: item.protein || 0, carbs: item.carbs || 0, fat: item.fat || 0, count: 1 });
+  } else {
+    existing.count = (existing.count || 0) + 1;
+  }
+  saveData(); renderFoodLog(); renderQuickPicks();
+  showToast('⭐ ' + item.name + ' saved to My Foods');
 }
 
 function updateCalorieSummary() {
@@ -4762,7 +4869,7 @@ async function exportWeeklyPDF() {
   pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(6.5);
   pdf.setTextColor(...muted);
-  pdf.text('Generated by ToLife! v7.3  |  L\'Chaim \u2014 to health, to strength  |  Created by Claude AI, from an idea by Shawn Cohen MD', pw / 2, y, { align: 'center' });
+  pdf.text('Generated by ToLife! v7.4  |  L\'Chaim \u2014 to health, to strength  |  Created by Claude AI, from an idea by Shawn Cohen MD', pw / 2, y, { align: 'center' });
 
   // Save
   const filename = 'tolife-report-' + today() + '.pdf';
