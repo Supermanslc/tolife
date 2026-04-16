@@ -3249,13 +3249,13 @@ async function estimateCalories() {
   const input = document.getElementById('foodInput').value.trim();
   if (!input) { showToast('⚠️ Describe what you ate'); return; }
   const btn = document.getElementById('estimateBtn');
-  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Estimating...';
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
   try {
     const response = await callAI(input);
     lastAiResult = response; displayAiResult(response);
   } catch (err) {
     console.error(err); lastAiResult = estimateLocally(input); displayAiResult(lastAiResult);
-  } finally { btn.disabled = false; btn.textContent = '🔍 Estimate'; }
+  } finally { btn.disabled = false; btn.textContent = 'Log'; }
 }
 
 async function callAI(food) {
@@ -3801,7 +3801,7 @@ function smartFoodEntry() {
 async function handleFoodPhoto(event) {
   const file = event.target.files[0];
   if (!file) return;
-  showToast('📷 Analyzing photo...', 8000);
+  showToast('📷 Analyzing photo...', 12000);
   const preview = document.getElementById('foodPhotoPreview');
   const img = document.getElementById('foodPhotoImg');
   try {
@@ -3809,19 +3809,21 @@ async function handleFoodPhoto(event) {
     const maxW = 800;
     const scale = bitmap.width > maxW ? maxW / bitmap.width : 1;
     const canvas = document.createElement('canvas');
-    canvas.width = bitmap.width * scale;
-    canvas.height = bitmap.height * scale;
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
     const ctx = canvas.getContext('2d');
     ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
     const base64 = dataUrl.split(',')[1];
     img.src = dataUrl;
     preview.style.display = 'block';
+    const sizeKB = Math.round(base64.length / 1024);
+    preview.querySelector('div').textContent = 'Analyzing photo... (' + sizeKB + ' KB)';
     const r = await fetch(CONFIG.workerUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: 'food_image', image: base64, media_type: 'image/jpeg' }),
-      signal: AbortSignal.timeout(20000)
+      signal: AbortSignal.timeout(30000)
     });
     if (r.ok) {
       const d = await r.json();
@@ -3830,17 +3832,22 @@ async function handleFoodPhoto(event) {
         displayAiResult(d);
         preview.style.display = 'none';
         showToast('📷 Photo analyzed!');
+      } else if (d.error) {
+        showToast('⚠️ ' + d.error, 5000);
+        preview.style.display = 'none';
       } else {
         showToast('⚠️ Could not identify food in photo');
         preview.style.display = 'none';
       }
     } else {
-      showToast('⚠️ Photo analysis failed — try describing it instead');
+      let detail = 'HTTP ' + r.status;
+      try { const ej = await r.json(); detail = ej.error || ej.details || ej.message || detail; } catch(x) { try { detail = (await r.text()).substring(0, 100); } catch(xx) {} }
+      showToast('⚠️ Photo error: ' + detail, 5000);
       preview.style.display = 'none';
     }
   } catch (e) {
     console.warn('Food photo error:', e.message);
-    showToast('⚠️ Photo analysis failed — try describing it instead');
+    showToast('⚠️ ' + (e.name === 'TimeoutError' ? 'Photo analysis timed out — try again' : 'Photo error: ' + e.message), 5000);
     preview.style.display = 'none';
   }
   event.target.value = '';
