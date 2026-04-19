@@ -3941,7 +3941,18 @@ function refreshDashboard() {
   if (document.getElementById('dashWeightHero')) document.getElementById('dashWeightHero').textContent = w.toFixed(1);
   updateDashBodyFat();
   const todayCal = data.calories.find(c=>c.date===today());
-  document.getElementById('dashCalBudget').textContent = todayCal ? todayCal.target.toLocaleString() : calcTarget(w,'moderate').toLocaleString();
+  // Recalculate target live from current weight + activity + phase
+  const todayActivity = todayCal ? (todayCal.activity || 'moderate') : 'moderate';
+  const phaseAdj = currentPhase === 'build' ? 150 : 0;
+  const isHoliday = todayCal && (todayCal.shabbat || todayCal.holiday);
+  let liveTarget = calcTarget(w, isHoliday ? 'light' : todayActivity) + phaseAdj;
+  if (todayCal && todayCal.shabbat) liveTarget += 400;
+  if (todayCal && todayCal.holiday) liveTarget += 200;
+  if (todayCal && todayCal.compensation) liveTarget = Math.max(liveTarget - todayCal.compensation, 1200);
+  // Update stored target to match live calculation
+  if (todayCal && !isHoliday) { todayCal.target = liveTarget; saveData(); }
+  const displayTarget = todayCal ? liveTarget : calcTarget(w, 'moderate');
+  document.getElementById('dashCalBudget').textContent = displayTarget.toLocaleString();
   const todayCheckin = data.checkins.find(c=>c.date===today());
   const streakEl = document.getElementById('dashStreak');
   if (streakEl) { const s = calcStreak(); streakEl.textContent = s; streakEl.style.color = s >= 7 ? 'var(--accent-green)' : 'var(--accent-orange)'; }
@@ -3985,7 +3996,7 @@ function refreshDashboard() {
     phaseEl.style.fontSize = '1rem';
   }
   const exerciseCredit = getExerciseBudgetCredit();
-  const budget = todayCal ? todayCal.target : calcTarget(w, 'moderate');
+  const budget = displayTarget;
   const remaining = budget + exerciseCredit - consumed;
   document.getElementById('dashRemaining').textContent = remaining.toLocaleString();
   document.getElementById('dashRemaining').className = 'stat-value ' + (remaining >= 0 ? 'stat-green' : 'stat-red');
